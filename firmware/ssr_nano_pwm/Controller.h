@@ -19,13 +19,14 @@ public:
   Controller();
   void setup();
   void update();
+  SerialReceiver& getSerialReceiver();
+
   void closeRelay(int relay);
   void openRelay(int relay);
+  void openAllRelays();
 private:
   SerialReceiver serial_receiver_;
   void processMessage();
-  void startPwm(int relay,long period,long on_duration);
-  void stopAllPwm();
 };
 
 extern Controller controller;

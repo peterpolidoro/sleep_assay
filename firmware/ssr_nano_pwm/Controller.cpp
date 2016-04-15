@@ -41,6 +41,11 @@ void Controller::update()
   }
 }
 
+SerialReceiver& Controller::getSerialReceiver()
+{
+  return serial_receiver_;
+}
+
 void Controller::closeRelay(int relay)
 {
   digitalWrite(constants::ssr_pins[relay],HIGH);
@@ -49,6 +54,15 @@ void Controller::closeRelay(int relay)
 void Controller::openRelay(int relay)
 {
   digitalWrite(constants::ssr_pins[relay],LOW);
+}
+
+
+void Controller::openAllRelays()
+{
+  for (uint8_t relay=0; relay<constants::RELAY_COUNT; ++relay)
+  {
+    openRelay(relay);
+  }
 }
 
 void Controller::processMessage()
@@ -60,39 +74,16 @@ void Controller::processMessage()
   switch (method_id)
   {
     case constants::METHOD_ID_START_PWM:
-      {
-        int relay = serial_receiver_.readInt(1);
-        long period = serial_receiver_.readLong(2);
-        long on_duration = serial_receiver_.readLong(3);
-        startPwm(relay,period,on_duration);
-        break;
-      }
+      callbacks::startPwmCallback();
+      break;
+    case constants::METHOD_ID_START_PWM_PATTERN:
+      callbacks::startPwmPatternCallback();
+      break;
     case constants::METHOD_ID_STOP_ALL_PULSES:
-      {
-        stopAllPwm();
-        break;
-      }
+      callbacks::stopAllPwmCallback();
+      break;
     default:
       break;
-  }
-}
-
-void Controller::startPwm(int relay,long period,long on_duration)
-{
-  EventController::event_controller.addInfinitePwmUsingDelayPeriodOnDuration(callbacks::closeRelayEventCallback,
-                                                                             callbacks::openRelayEventCallback,
-                                                                             constants::delay,
-                                                                             period,
-                                                                             on_duration,
-                                                                             relay);
-}
-
-void Controller::stopAllPwm()
-{
-  EventController::event_controller.removeAllEvents();
-  for (uint8_t relay=0; relay<constants::RELAY_COUNT; ++relay)
-  {
-    openRelay(relay);
   }
 }
 

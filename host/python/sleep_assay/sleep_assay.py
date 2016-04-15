@@ -22,8 +22,10 @@ class SleepAssay(object):
     _MILLISECONDS_PER_SECOND = 1000
     _SECONDS_PER_MINUTE = 60
     _MINUTES_PER_HOUR = 60
+    _HOURS_PER_DAY = 24
     _METHOD_ID_START_PWM = 0
-    _METHOD_ID_STOP_ALL_PULSES = 1
+    _METHOD_ID_START_PWM_PATTERN = 1
+    _METHOD_ID_STOP_ALL_PULSES = 2
 
     def __init__(self,*args,**kwargs):
         if 'debug' in kwargs:
@@ -92,6 +94,19 @@ class SleepAssay(object):
         on_duration = int(on_duration)
         self._send_request(self._METHOD_ID_START_PWM,relay,period,on_duration)
 
+    def _start_pwm_pattern(self,relay,pwm_period,pwm_on_duration,pattern_period,pattern_on_duration):
+        '''
+        '''
+        if relay < 0:
+            relay = 0
+        elif relay > (self._RELAY_COUNT - 1):
+            relay = self._RELAY_COUNT
+        pwm_period = int(pwm_period)
+        pwm_on_duration = int(pwm_on_duration)
+        pattern_period = int(pattern_period)
+        pattern_on_duration = int(pattern_on_duration)
+        self._send_request(self._METHOD_ID_START_PWM_PATTERN,relay,pwm_period,pwm_on_duration,pattern_period,pattern_on_duration)
+
     def _start_pwm_frequency_duty_cycle(self,relay,frequency,duty_cycle):
         '''
         '''
@@ -107,11 +122,22 @@ class SleepAssay(object):
     def start_camera_trigger(self,relay,frame_rate):
         self._start_pwm_frequency_duty_cycle(relay,frame_rate,self._CAMERA_TRIGGER_DUTY_CYCLE)
 
-    def start_backlight_cycle(self,relay,on_duration_hours,off_duration_hours):
-        milliseconds_per_hour = self._MILLISECONDS_PER_SECOND *self._SECONDS_PER_MINUTE *self._MINUTES_PER_HOUR
-        period = (on_duration_hours + off_duration_hours)*milliseconds_per_hour
-        on_duration = on_duration_hours*milliseconds_per_hour
-        self._start_pwm_period_on_duration(relay,period,on_duration)
+    def start_white_light_cycle(self,relay,pwm_on_duration_hours,pwm_off_duration_hours,pattern_on_duration_days,pattern_off_duration_days):
+        milliseconds_per_hour = self._MILLISECONDS_PER_SECOND*self._SECONDS_PER_MINUTE*self._MINUTES_PER_HOUR
+        milliseconds_per_day = milliseconds_per_hour*self._HOURS_PER_DAY
+        pwm_period = (pwm_on_duration_hours + pwm_off_duration_hours)*milliseconds_per_hour
+        pwm_on_duration = pwm_on_duration_hours*milliseconds_per_hour
+        pattern_period = (pattern_on_duration_days + pattern_off_duration_days)*milliseconds_per_day
+        pattern_on_duration = pattern_on_duration_days*milliseconds_per_day
+        self._start_pwm_pattern(relay,pwm_period,pwm_on_duration,pattern_period,pattern_on_duration)
+
+    def start_red_light_cycle(self,relay,pwm_frequency,pwm_duty_cycle,pattern_on_duration_hours,pattern_off_duration_hours):
+        milliseconds_per_hour = self._MILLISECONDS_PER_SECOND*self._SECONDS_PER_MINUTE*self._MINUTES_PER_HOUR
+        pwm_period = 1000/pwm_frequency
+        pwm_on_duration = (pwm_duty_cycle/100)*pwm_period
+        pattern_period = (pattern_on_duration_hours + pattern_off_duration_hours)*milliseconds_per_hour
+        pattern_on_duration = pattern_on_duration_hours*milliseconds_per_hour
+        self._start_pwm_pattern(relay,pwm_period,pwm_on_duration,pattern_period,pattern_on_duration)
 
     def stop(self):
         self._stop_all_pulses()

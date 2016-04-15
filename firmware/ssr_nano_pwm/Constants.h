@@ -13,10 +13,12 @@
 namespace constants
 {
 enum{RELAY_COUNT=8};
+enum{INDEXED_PATTERNS_COUNT_MAX=4};
 
 enum
   {
     METHOD_ID_START_PWM,
+    METHOD_ID_START_PWM_PATTERN,
     METHOD_ID_STOP_ALL_PULSES,
   };
 
