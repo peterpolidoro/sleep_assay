@@ -27,7 +27,7 @@ class SleepAssay(object):
     _METHOD_ID_START_PWM_PATTERN = 1
     _METHOD_ID_STOP_ALL_PULSES = 2
 
-    def __init__(self,*args,**kwargs):
+    def __init__(self,config_file_path,*args,**kwargs):
         if 'debug' in kwargs:
             self.debug = kwargs['debug']
         else:
@@ -41,8 +41,12 @@ class SleepAssay(object):
             kwargs.update({'timeout': self._TIMEOUT})
         if 'write_write_delay' not in kwargs:
             kwargs.update({'write_write_delay': self._WRITE_WRITE_DELAY})
-        if ('port' not in kwargs) or (kwargs['port'] is None):
+        with open(self._config_file_path,'r') as config_stream:
+            self._config = yaml.load(config_stream)
+        if ('port' not in self._config):
             raise RuntimeError('Must specify serial port!')
+        else:
+            kwargs['port'] = self._config.port
 
         t_start = time.time()
         self._serial_device = SerialDevice(*args,**kwargs)

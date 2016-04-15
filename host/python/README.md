@@ -13,6 +13,10 @@ License:
 
 ```python
 from sleep_assay import SleepAssay
+sa = SleepAssay('example_config.yaml')
+
+
+
 sa = SleepAssay(port='/dev/ttyUSB0')
 camera_relay = 0
 camera_frame_rate = 0.5
