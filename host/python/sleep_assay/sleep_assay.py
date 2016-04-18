@@ -4,6 +4,8 @@ import serial
 import time
 import atexit
 import yaml
+import sys
+import argparse
 
 from serial_device2 import SerialDevice, SerialDevices, find_serial_device_ports, WriteFrequencyError
 
@@ -41,12 +43,12 @@ class SleepAssay(object):
             kwargs.update({'timeout': self._TIMEOUT})
         if 'write_write_delay' not in kwargs:
             kwargs.update({'write_write_delay': self._WRITE_WRITE_DELAY})
-        with open(self._config_file_path,'r') as config_stream:
+        with open(config_file_path,'r') as config_stream:
             self._config = yaml.load(config_stream)
-        if ('port' not in self._config):
-            raise RuntimeError('Must specify serial port!')
+        if ('relay_board_serial_port' not in self._config):
+            raise RuntimeError('Must specify serial port in config file!')
         else:
-            kwargs['port'] = self._config.port
+            kwargs['port'] = self._config['relay_board_serial_port']
 
         t_start = time.time()
         self._serial_device = SerialDevice(*args,**kwargs)
@@ -146,9 +148,38 @@ class SleepAssay(object):
     def stop(self):
         self._stop_all_pulses()
 
+    def start(self):
+        self.start_camera_trigger(self._config['camera']['relay'],
+                                  self._config['camera']['frame_rate_hz'])
+        self.start_white_light_cycle(self._config['white_light']['relay'],
+                                     self._config['white_light']['pwm_on_duration_hours'],
+                                     self._config['white_light']['pwm_off_duration_hours'],
+                                     self._config['white_light']['pattern_on_duration_days'],
+                                     self._config['white_light']['pattern_off_duration_days'])
+        self.start_red_light_cycle(self._config['red_light']['relay'],
+                                   self._config['red_light']['pwm_frequency_hz'],
+                                   self._config['red_light']['pwm_duty_cycle_percent'],
+                                   self._config['red_light']['pattern_on_duration_hours'],
+                                   self._config['red_light']['pattern_off_duration_hours'])
+
+
+def main(args=None):
+    if args is None:
+        args = sys.argv[1:]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("config_file_path", help="Path to yaml config file.")
+
+    args = parser.parse_args()
+    config_file_path = args.config_file_path
+    print("Config File Path: {0}".format(config_file_path))
+
+    sa = SleepAssay(config_file_path)
+    sa.start()
+    while(True):
+        pass
+
 
 # -----------------------------------------------------------------------------------------
 if __name__ == '__main__':
-
-    debug = False
-    dev = SleepAssay(debug=debug)
+    debug = True
+    main()
