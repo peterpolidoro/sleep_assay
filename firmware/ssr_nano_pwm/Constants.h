@@ -24,8 +24,6 @@ enum
 
 extern const unsigned int baudrate;
 
-extern const int delay;
-
 extern const uint8_t ssr_pins[RELAY_COUNT];
 
 }

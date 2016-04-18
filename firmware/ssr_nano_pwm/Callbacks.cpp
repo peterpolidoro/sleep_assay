@@ -20,9 +20,14 @@ void startPwmCallback()
   int relay = serial_receiver.readInt(1);
   long period = serial_receiver.readLong(2);
   long on_duration = serial_receiver.readLong(3);
+  long delay = serial_receiver.readLong(4);
+  // Serial << "relay = " << relay << "\n";
+  // Serial << "period = " << period << "\n";
+  // Serial << "on_duration = " << on_duration << "\n";
+  // Serial << "delay = " << delay << "\n";
   EventController::event_controller.addInfinitePwmUsingDelayPeriodOnDuration(callbacks::closeRelayEventCallback,
                                                                              callbacks::openRelayEventCallback,
-                                                                             constants::delay,
+                                                                             delay,
                                                                              period,
                                                                              on_duration,
                                                                              relay);
@@ -39,6 +44,13 @@ void startPwmPatternCallback()
   long pwm_on_duration = serial_receiver.readLong(3);
   long pattern_period = serial_receiver.readLong(4);
   long pattern_on_duration = serial_receiver.readLong(5);
+  long delay = serial_receiver.readLong(6);
+  // Serial << "relay = " << relay << "\n";
+  // Serial << "pwm_period_period = " << pwm_period << "\n";
+  // Serial << "pwm_on_duration = " << pwm_on_duration << "\n";
+  // Serial << "pattern_period = " << pattern_period << "\n";
+  // Serial << "pattern_on_duration = " << pattern_on_duration << "\n";
+  // Serial << "delay = " << delay << "\n";
   PatternInfo pattern_info;
   pattern_info.relay = relay;
   pattern_info.pwm_period = pwm_period;
@@ -46,7 +58,7 @@ void startPwmPatternCallback()
   int index = indexed_patterns.add(pattern_info);
   EventController::event_controller.addInfinitePwmUsingDelayPeriodOnDuration(callbacks::startPwmEventCallback,
                                                                              callbacks::stopPwmEventCallback,
-                                                                             constants::delay,
+                                                                             delay,
                                                                              pattern_period,
                                                                              pattern_on_duration,
                                                                              index);
