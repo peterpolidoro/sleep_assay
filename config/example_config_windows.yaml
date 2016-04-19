@@ -1,5 +1,4 @@
-relay_board_serial_port: /dev/ttyUSB0
-# relay_board_serial_port: COM3
+relay_board_serial_port: COM6
 camera:
   relay: 0
   frame_rate_hz: 0.5

@@ -13,7 +13,7 @@ License:
 
 
 ```shell
-source ~/virtualenvs/sleep_assay/bin/activate
+cd ~/sleep_assay
 python sleep_assay.py example_config.yaml
 ```
 
@@ -28,20 +28,7 @@ sa.stop()
 
 [Setup Python](https://github.com/janelia-pypi/python_setup)
 
-###Linux and Mac OS X
-
 ```shell
-mkdir -p ~/virtualenvs/sleep_assay
-virtualenv ~/virtualenvs/sleep_assay
-source ~/virtualenvs/sleep_assay/bin/activate
-pip install serial_device2
-pip install pyyaml
-```
-
-###Windows
-
-```shell
-cd ~/sleep_assay
-pip install serial_device2
-pip install pyyaml
+cd ~/sleep_assay/host/python
+python setup.py install
 ```

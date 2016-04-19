@@ -10,20 +10,11 @@ License:
 
 ##Download This Repository
 
-###Setup Git
+###Setup Git and Git Bash
 
 <https://github.com/janelia-idf/git_setup>
 
-###Linux and Mac OS X
-
-```shell
-cd ~
-git clone https://github.com/janelia-idf/sleep_assay.git
-```
-
-###Windows
-
-Launch git bash.
+###Clone This Repository
 
 ```shell
 cd ~
