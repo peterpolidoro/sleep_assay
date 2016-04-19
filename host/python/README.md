@@ -1,4 +1,3 @@
-
 #sleep_assay
 
 Authors:
@@ -13,8 +12,9 @@ License:
 
 
 ```shell
-cd ~/sleep_assay
-python sleep_assay.py example_config.yaml
+cd ~/sleep_assay/config
+sleep_assay.py example_config_windows.yaml
+sleep_assay.py example_config_linux.yaml
 ```
 
 ```python
