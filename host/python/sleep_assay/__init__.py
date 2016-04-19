@@ -1,3 +1,3 @@
 '''
 '''
-from sleep_assay import SleepAssay
+from sleep_assay import SleepAssay, main
