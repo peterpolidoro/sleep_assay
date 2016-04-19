@@ -1,3 +1,4 @@
+
 #sleep_assay
 
 Authors:
@@ -40,8 +41,7 @@ pip install pyyaml
 ###Windows
 
 ```shell
-virtualenv C:\virtualenvs\sleep_assay
-C:\virtualenvs\sleep_assay\Scripts\activate
+cd ~/sleep_assay
 pip install serial_device2
 pip install pyyaml
 ```
