@@ -8,9 +8,19 @@ License:
 
     BSD
 
-##Download This Repository
+##Example Usage
 
-###Setup Git and Git Bash
+Open terminal on linux/osx or git bash on windows.
+
+```shell
+sleep_assay.py ~/sleep_assay/config/example_config.yaml
+```
+
+Press ctrl-c in terminal window or close terminal window to stop.
+
+##Installation
+
+###Setup Git
 
 <https://github.com/janelia-idf/git_setup>
 
@@ -21,6 +31,6 @@ cd ~
 git clone https://github.com/janelia-idf/sleep_assay.git
 ```
 
-##Installation
+###Setup Host Computer Python Control Program
 
-[Setup Host Computer Control Program](./host/python/README.md)
+<./host/python/README.md>

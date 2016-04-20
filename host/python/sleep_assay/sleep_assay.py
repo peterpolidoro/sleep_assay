@@ -7,6 +7,7 @@ import yaml
 import sys
 import argparse
 import datetime
+import platform
 
 from serial_device2 import SerialDevice, SerialDevices, find_serial_device_ports, WriteFrequencyError
 
@@ -51,11 +52,22 @@ class SleepAssay(object):
             kwargs.update({'write_write_delay': self._WRITE_WRITE_DELAY})
         with open(config_file_path,'r') as config_stream:
             self._config = yaml.load(config_stream)
-        if ('relay_board_serial_port' not in self._config):
-            raise RuntimeError('Must specify serial port in config file!')
-        else:
-            kwargs['port'] = self._config['relay_board_serial_port']
-
+        os_type = platform.system()
+        if os_type == 'Linux':
+            if ('relay_board_serial_port_linux' not in self._config):
+                raise RuntimeError('Must specify linux serial port in config file!')
+            else:
+                kwargs['port'] = self._config['relay_board_serial_port_linux']
+        elif os_type == 'Windows':
+            if ('relay_board_serial_port_windows' not in self._config):
+                raise RuntimeError('Must specify windows serial port in config file!')
+            else:
+                kwargs['port'] = self._config['relay_board_serial_port_windows']
+        elif os_type == 'Darwin':
+            if ('relay_board_serial_port_osx' not in self._config):
+                raise RuntimeError('Must specify osx serial port in config file!')
+            else:
+                kwargs['port'] = self._config['relay_board_serial_port']
         t_start = time.time()
         self._serial_device = SerialDevice(*args,**kwargs)
         atexit.register(self._exit_sleep_assay)
@@ -158,12 +170,18 @@ class SleepAssay(object):
         '''
         self._send_request(self._METHOD_ID_STOP_ALL_PULSES)
 
-    def _start_to_delay(self,start):
-        start_datetime = datetime.datetime(start['year'],
-                                           start['month'],
-                                           start['day'],
+    def _start_to_start_datetime(self,start):
+        now_datetime = datetime.datetime.now()
+        offset = datetime.timedelta(start['offset_days'])
+        offset_datetime = now_datetime + offset
+        start_datetime = datetime.datetime(offset_datetime.year,
+                                           offset_datetime.month,
+                                           offset_datetime.day,
                                            start['hour'],
                                            start['minute'])
+        return start_datetime
+
+    def _start_datetime_to_delay(self,start_datetime):
         now_datetime = datetime.datetime.now()
         delta = start_datetime - now_datetime
         delay = int(self._MILLISECONDS_PER_SECOND*delta.total_seconds())
@@ -187,12 +205,13 @@ class SleepAssay(object):
         self._debug_print('  relay = {0}'.format(relay))
         self._debug_print('  frame_rate = {0}'.format(frame_rate))
         self._debug_print('  start:')
-        self._debug_print('    {0}-{1}-{2}-{3}:{4}'.format(start['year'],
-                                                           start['month'],
-                                                           start['day'],
-                                                           start['hour'],
-                                                           start['minute']))
-        delay = self._start_to_delay(start)
+        start_datetime = self._start_to_start_datetime(start)
+        self._debug_print('    {0}-{1}-{2}-{3}:{4}'.format(start_datetime.year,
+                                                           start_datetime.month,
+                                                           start_datetime.day,
+                                                           start_datetime.hour,
+                                                           start_datetime.minute))
+        delay = self._start_datetime_to_delay(start_datetime)
         self._start_pwm_frequency_duty_cycle(relay,
                                              frame_rate,
                                              self._CAMERA_TRIGGER_DUTY_CYCLE,
@@ -212,16 +231,17 @@ class SleepAssay(object):
         self._debug_print('  pattern_on_duration_days = {0}'.format(pattern_on_duration_days))
         self._debug_print('  pattern_off_duration_days = {0}'.format(pattern_off_duration_days))
         self._debug_print('  start:')
-        self._debug_print('    {0}-{1}-{2}-{3}:{4}'.format(start['year'],
-                                                           start['month'],
-                                                           start['day'],
-                                                           start['hour'],
-                                                           start['minute']))
+        start_datetime = self._start_to_start_datetime(start)
+        self._debug_print('    {0}-{1}-{2}-{3}:{4}'.format(start_datetime.year,
+                                                           start_datetime.month,
+                                                           start_datetime.day,
+                                                           start_datetime.hour,
+                                                           start_datetime.minute))
         pwm_period = (pwm_on_duration_hours + pwm_off_duration_hours)*self._MILLISECONDS_PER_HOUR
         pwm_on_duration = pwm_on_duration_hours*self._MILLISECONDS_PER_HOUR
         pattern_period = (pattern_on_duration_days + pattern_off_duration_days)*self._MILLISECONDS_PER_DAY
         pattern_on_duration = pattern_on_duration_days*self._MILLISECONDS_PER_DAY
-        delay = self._start_to_delay(start)
+        delay = self._start_datetime_to_delay(start_datetime)
         self._start_pwm_pattern(relay,
                                 pwm_period,
                                 pwm_on_duration,
@@ -243,16 +263,17 @@ class SleepAssay(object):
         self._debug_print('  pattern_on_duration_hours = {0}'.format(pattern_on_duration_hours))
         self._debug_print('  pattern_off_duration_hours = {0}'.format(pattern_off_duration_hours))
         self._debug_print('  start:')
-        self._debug_print('    {0}-{1}-{2}-{3}:{4}'.format(start['year'],
-                                                           start['month'],
-                                                           start['day'],
-                                                           start['hour'],
-                                                           start['minute']))
+        start_datetime = self._start_to_start_datetime(start)
+        self._debug_print('    {0}-{1}-{2}-{3}:{4}'.format(start_datetime.year,
+                                                           start_datetime.month,
+                                                           start_datetime.day,
+                                                           start_datetime.hour,
+                                                           start_datetime.minute))
         pwm_period = 1000/pwm_frequency
         pwm_on_duration = (pwm_duty_cycle/100)*pwm_period
         pattern_period = (pattern_on_duration_hours + pattern_off_duration_hours)*self._MILLISECONDS_PER_HOUR
         pattern_on_duration = pattern_on_duration_hours*self._MILLISECONDS_PER_HOUR
-        delay = self._start_to_delay(start)
+        delay = self._start_datetime_to_delay(start_datetime)
         self._start_pwm_pattern(relay,
                                 pwm_period,
                                 pwm_on_duration,

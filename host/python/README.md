@@ -11,11 +11,15 @@ License:
 ##Example Usage
 
 
+Open terminal on linux/osx or git bash on windows.
+
 ```shell
-cd ~/sleep_assay/config
-sleep_assay.py example_config_windows.yaml
-sleep_assay.py example_config_linux.yaml
+sleep_assay.py ~/sleep_assay/config/example_config.yaml
 ```
+
+Press ctrl-c in terminal window or close terminal window to stop.
+
+In ipython or the python command shell:
 
 ```python
 from sleep_assay import SleepAssay
