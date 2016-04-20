@@ -29,6 +29,7 @@ Press ctrl-c in terminal window or close terminal window to stop.
 ```shell
 cd ~
 git clone https://github.com/janelia-idf/sleep_assay.git
+git fetch --tags
 ```
 
 ###Setup Host Computer Python Control Program
