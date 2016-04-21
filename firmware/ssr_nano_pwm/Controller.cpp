@@ -18,7 +18,7 @@ void Controller::setup()
   // Pin Setup
   for (uint8_t relay=0; relay<constants::RELAY_COUNT; ++relay)
   {
-    pinMode(constants::ssr_pins[relay],OUTPUT);
+    pinMode(constants::relay_pins[relay],OUTPUT);
     openRelay(relay);
   }
 
@@ -48,14 +48,18 @@ SerialReceiver& Controller::getSerialReceiver()
 
 void Controller::closeRelay(int relay)
 {
-  digitalWrite(constants::ssr_pins[relay],HIGH);
+  digitalWrite(constants::relay_pins[relay],HIGH);
 }
 
 void Controller::openRelay(int relay)
 {
-  digitalWrite(constants::ssr_pins[relay],LOW);
+  digitalWrite(constants::relay_pins[relay],LOW);
 }
 
+void Controller::pwmRelay(int relay, uint8_t duty_cycle)
+{
+  analogWrite(constants::relay_pins[relay],value);
+}
 
 void Controller::openAllRelays()
 {
@@ -78,6 +82,9 @@ void Controller::processMessage()
       break;
     case constants::METHOD_ID_START_PWM_PATTERN:
       callbacks::startPwmPatternCallback();
+      break;
+    case constants::METHOD_ID_START_PWM_PATTERN_POWER:
+      callbacks::startPwmPatternPowerCallback();
       break;
     case constants::METHOD_ID_STOP_ALL_PULSES:
       callbacks::stopAllPwmCallback();

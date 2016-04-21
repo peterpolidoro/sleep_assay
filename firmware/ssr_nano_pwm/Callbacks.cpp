@@ -64,6 +64,53 @@ void startPwmPatternCallback()
                                                                              index);
 }
 
+void startPwmPatternPowerCallback()
+{
+  if (indexed_patterns.full())
+  {
+    return;
+  }
+  int relay = serial_receiver.readInt(1);
+  long pwm_period = serial_receiver.readLong(2);
+  long pwm_on_duration = serial_receiver.readLong(3);
+  long pattern_period = serial_receiver.readLong(4);
+  long pattern_on_duration = serial_receiver.readLong(5);
+  long delay = serial_receiver.readLong(6);
+  int power = serial_receiver.readInt(7);
+  Serial << "relay = " << relay << "\n";
+  Serial << "pwm_period_period = " << pwm_period << "\n";
+  Serial << "pwm_on_duration = " << pwm_on_duration << "\n";
+  Serial << "pattern_period = " << pattern_period << "\n";
+  Serial << "pattern_on_duration = " << pattern_on_duration << "\n";
+  Serial << "delay = " << delay << "\n";
+  Serial << "power = " << power << "\n";
+  uint8_t relay_pin = constants::relay_pins[relay];
+  bool relay_pin_is_high_freq = false;
+  for (uint8_t r=0; r<constants::HIGH_FREQ_RELAY_COUNT; ++r)
+  {
+    if (relay_pin == constants::high_freq_relay_pins[r])
+    {
+      relay_pin_is_high_freq = true;
+    }
+  }
+  Serial << "relay_pin_is_high_freq = " << relay_pin_is_high_freq << "\n";
+  if (!relay_pin_is_high_freq)
+  {
+    return;
+  }
+  PatternInfo pattern_info;
+  pattern_info.relay = relay;
+  pattern_info.pwm_period = pwm_period;
+  pattern_info.pwm_on_duration = pwm_on_duration;
+  int index = indexed_patterns.add(pattern_info);
+  EventController::event_controller.addInfinitePwmUsingDelayPeriodOnDuration(callbacks::startPwmEventCallback,
+                                                                             callbacks::stopPwmEventCallback,
+                                                                             delay,
+                                                                             pattern_period,
+                                                                             pattern_on_duration,
+                                                                             index);
+}
+
 void stopAllPwmCallback()
 {
   EventController::event_controller.removeAllEvents();

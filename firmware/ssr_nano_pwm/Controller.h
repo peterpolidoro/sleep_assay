@@ -23,6 +23,7 @@ public:
 
   void closeRelay(int relay);
   void openRelay(int relay);
+  void pwmRelay(int relay, uint8_t duty_cycle);
   void openAllRelays();
 private:
   SerialReceiver serial_receiver_;

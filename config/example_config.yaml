@@ -5,25 +5,20 @@ camera:
   relay: 0
   frame_rate_hz: 0.5
   start:
-    # -1 <= offset_days <= 10, -1 is start immediately, 0 is today, 1 is tomorrow, etc.
-    offset_days: 0
-    # 0 <= hour < 24, 9 is 9AM, 16 is 4PM, etc.
-    hour: 16
-    # 0 <= minute < 60, hour = 9 and minute = 0 is 9:00AM, hour = 16 and minute = 30 is 4:30PM, etc.
-    minute: 0
+    offset_days: 0 # -1 <= offset_days <= 10, -1 is start immediately, 0 is today, 1 is tomorrow, etc.
+    hour: 16 # 0 <= hour < 24, 9 is 9AM, 16 is 4PM, etc.
+    minute: 0 # 0 <= minute < 60, hour = 9 and minute = 0 is 9:00AM, hour = 16 and minute = 30 is 4:30PM, etc.
 white_light:
   relay: 1
   pwm_on_duration_hours: 12
   pwm_off_duration_hours: 12
   pattern_on_duration_days: 3
   pattern_off_duration_days: 3
+  power: 100 # 0 <= power <= 255
   start:
-    # -1 <= offset_days <= 10, -1 is start immediately, 0 is today, 1 is tomorrow, etc.
-    offset_days: 0
-    # 0 <= hour < 24, 9 is 9AM, 16 is 4PM, etc.
-    hour: 16
-    # 0 <= minute < 60, hour = 9 and minute = 0 is 9:00AM, hour = 16 and minute = 30 is 4:30PM, etc.
-    minute: 0
+    offset_days: 0 # -1 <= offset_days <= 10, -1 is start immediately, 0 is today, 1 is tomorrow, etc.
+    hour: 16 # 0 <= hour < 24, 9 is 9AM, 16 is 4PM, etc.
+    minute: 0 # 0 <= minute < 60, hour = 9 and minute = 0 is 9:00AM, hour = 16 and minute = 30 is 4:30PM, etc.
 red_light:
   relay: 2
   pwm_frequency_hz: 10
@@ -31,11 +26,8 @@ red_light:
   pattern_on_duration_hours: 12
   pattern_off_duration_hours: 12
   start:
-    # -1 <= offset_days <= 10, -1 is start immediately, 0 is today, 1 is tomorrow, etc.
-    offset_days: 0
-    # 0 <= hour < 24, 9 is 9AM, 16 is 4PM, etc.
-    hour: 16
-    # 0 <= minute < 60, hour = 9 and minute = 0 is 9:00AM, hour = 16 and minute = 30 is 4:30PM, etc.
-    minute: 0
+    offset_days: 0 # -1 <= offset_days <= 10, -1 is start immediately, 0 is today, 1 is tomorrow, etc.
+    hour: 16 # 0 <= hour < 24, 9 is 9AM, 16 is 4PM, etc.
+    minute: 0 # 0 <= minute < 60, hour = 9 and minute = 0 is 9:00AM, hour = 16 and minute = 30 is 4:30PM, etc.
 board_indicator_light:
   relay: 7

@@ -28,6 +28,8 @@ void startPwmCallback();
 
 void startPwmPatternCallback();
 
+void startPwmPatternPowerCallback();
+
 void stopAllPwmCallback();
 
 // EventController Callbacks
