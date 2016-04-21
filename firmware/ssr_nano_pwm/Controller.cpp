@@ -56,9 +56,9 @@ void Controller::openRelay(int relay)
   digitalWrite(constants::relay_pins[relay],LOW);
 }
 
-void Controller::pwmRelay(int relay, uint8_t duty_cycle)
+void Controller::pwmRelay(int relay, int duty_cycle)
 {
-  analogWrite(constants::relay_pins[relay],value);
+  analogWrite(constants::relay_pins[relay],duty_cycle);
 }
 
 void Controller::openAllRelays()

@@ -34,7 +34,8 @@ class SleepAssay(object):
 
     _METHOD_ID_START_PWM = 0
     _METHOD_ID_START_PWM_PATTERN = 1
-    _METHOD_ID_STOP_ALL_PULSES = 2
+    _METHOD_ID_START_PWM_PATTERN_POWER = 2
+    _METHOD_ID_STOP_ALL_PULSES = 3
 
     def __init__(self,config_file_path,*args,**kwargs):
         if 'debug' in kwargs:
@@ -154,6 +155,35 @@ class SleepAssay(object):
                            pattern_on_duration,
                            delay)
 
+    def _start_pwm_pattern_power(self,
+                                 relay,
+                                 pwm_period,
+                                 pwm_on_duration,
+                                 pattern_period,
+                                 pattern_on_duration,
+                                 delay,
+                                 power):
+        '''
+        '''
+        if relay < 0:
+            relay = 0
+        elif relay > (self._RELAY_COUNT - 1):
+            relay = self._RELAY_COUNT
+        pwm_period = int(pwm_period)
+        pwm_on_duration = int(pwm_on_duration)
+        pattern_period = int(pattern_period)
+        pattern_on_duration = int(pattern_on_duration)
+        delay = int(delay)
+        power = int(power)
+        self._send_request(self._METHOD_ID_START_PWM_PATTERN_POWER,
+                           relay,
+                           pwm_period,
+                           pwm_on_duration,
+                           pattern_period,
+                           pattern_on_duration,
+                           delay,
+                           power)
+
     def _start_pwm_frequency_duty_cycle(self,
                                         relay,
                                         frequency,
@@ -185,8 +215,20 @@ class SleepAssay(object):
         now_datetime = datetime.datetime.now()
         delta = start_datetime - now_datetime
         delay = int(self._MILLISECONDS_PER_SECOND*delta.total_seconds())
+        self._debug_print('  start:')
         if delay < 0:
             delay = 0
+            self._debug_print('    {0}-{1}-{2}-{3}:{4}'.format(now_datetime.year,
+                                                               now_datetime.month,
+                                                               now_datetime.day,
+                                                               now_datetime.hour,
+                                                               now_datetime.minute))
+        else:
+            self._debug_print('    {0}-{1}-{2}-{3}:{4}'.format(start_datetime.year,
+                                                               start_datetime.month,
+                                                               start_datetime.day,
+                                                               start_datetime.hour,
+                                                               start_datetime.minute))
         return delay
 
     def start_board_indicator_light_cycle(self,relay):
@@ -204,13 +246,7 @@ class SleepAssay(object):
         self._debug_print('start_camera_trigger:')
         self._debug_print('  relay = {0}'.format(relay))
         self._debug_print('  frame_rate = {0}'.format(frame_rate))
-        self._debug_print('  start:')
         start_datetime = self._start_to_start_datetime(start)
-        self._debug_print('    {0}-{1}-{2}-{3}:{4}'.format(start_datetime.year,
-                                                           start_datetime.month,
-                                                           start_datetime.day,
-                                                           start_datetime.hour,
-                                                           start_datetime.minute))
         delay = self._start_datetime_to_delay(start_datetime)
         self._start_pwm_frequency_duty_cycle(relay,
                                              frame_rate,
@@ -223,6 +259,7 @@ class SleepAssay(object):
                                 pwm_off_duration_hours,
                                 pattern_on_duration_days,
                                 pattern_off_duration_days,
+                                power,
                                 start):
         self._debug_print('start_white_light_cycle:')
         self._debug_print('  relay = {0}'.format(relay))
@@ -230,24 +267,20 @@ class SleepAssay(object):
         self._debug_print('  pwm_off_duration_hours = {0}'.format(pwm_off_duration_hours))
         self._debug_print('  pattern_on_duration_days = {0}'.format(pattern_on_duration_days))
         self._debug_print('  pattern_off_duration_days = {0}'.format(pattern_off_duration_days))
-        self._debug_print('  start:')
+        self._debug_print('  power = {0}'.format(power))
         start_datetime = self._start_to_start_datetime(start)
-        self._debug_print('    {0}-{1}-{2}-{3}:{4}'.format(start_datetime.year,
-                                                           start_datetime.month,
-                                                           start_datetime.day,
-                                                           start_datetime.hour,
-                                                           start_datetime.minute))
         pwm_period = (pwm_on_duration_hours + pwm_off_duration_hours)*self._MILLISECONDS_PER_HOUR
         pwm_on_duration = pwm_on_duration_hours*self._MILLISECONDS_PER_HOUR
         pattern_period = (pattern_on_duration_days + pattern_off_duration_days)*self._MILLISECONDS_PER_DAY
         pattern_on_duration = pattern_on_duration_days*self._MILLISECONDS_PER_DAY
         delay = self._start_datetime_to_delay(start_datetime)
-        self._start_pwm_pattern(relay,
-                                pwm_period,
-                                pwm_on_duration,
-                                pattern_period,
-                                pattern_on_duration,
-                                delay)
+        self._start_pwm_pattern_power(relay,
+                                      pwm_period,
+                                      pwm_on_duration,
+                                      pattern_period,
+                                      pattern_on_duration,
+                                      delay,
+                                      power)
 
     def start_red_light_cycle(self,
                               relay,
@@ -262,13 +295,7 @@ class SleepAssay(object):
         self._debug_print('  pwm_duty_cycle = {0}'.format(pwm_duty_cycle))
         self._debug_print('  pattern_on_duration_hours = {0}'.format(pattern_on_duration_hours))
         self._debug_print('  pattern_off_duration_hours = {0}'.format(pattern_off_duration_hours))
-        self._debug_print('  start:')
         start_datetime = self._start_to_start_datetime(start)
-        self._debug_print('    {0}-{1}-{2}-{3}:{4}'.format(start_datetime.year,
-                                                           start_datetime.month,
-                                                           start_datetime.day,
-                                                           start_datetime.hour,
-                                                           start_datetime.minute))
         pwm_period = 1000/pwm_frequency
         pwm_on_duration = (pwm_duty_cycle/100)*pwm_period
         pattern_period = (pattern_on_duration_hours + pattern_off_duration_hours)*self._MILLISECONDS_PER_HOUR
@@ -294,6 +321,7 @@ class SleepAssay(object):
                                      self._config['white_light']['pwm_off_duration_hours'],
                                      self._config['white_light']['pattern_on_duration_days'],
                                      self._config['white_light']['pattern_off_duration_days'],
+                                     self._config['white_light']['power'],
                                      self._config['white_light']['start'])
         self.start_red_light_cycle(self._config['red_light']['relay'],
                                    self._config['red_light']['pwm_frequency_hz'],

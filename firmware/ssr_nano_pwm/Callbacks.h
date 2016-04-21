@@ -21,6 +21,7 @@ struct PatternInfo
   int relay;
   long pwm_period;
   long pwm_on_duration;
+  int power;
   EventController::EventIdPair event_id_pair;
 };
 
@@ -38,6 +39,8 @@ void closeRelayEventCallback(int relay);
 void openRelayEventCallback(int relay);
 
 void startPwmEventCallback(int index);
+
+void startPwmPowerEventCallback(int index);
 
 void stopPwmEventCallback(int index);
 

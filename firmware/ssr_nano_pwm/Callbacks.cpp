@@ -102,8 +102,9 @@ void startPwmPatternPowerCallback()
   pattern_info.relay = relay;
   pattern_info.pwm_period = pwm_period;
   pattern_info.pwm_on_duration = pwm_on_duration;
+  pattern_info.power = power;
   int index = indexed_patterns.add(pattern_info);
-  EventController::event_controller.addInfinitePwmUsingDelayPeriodOnDuration(callbacks::startPwmEventCallback,
+  EventController::event_controller.addInfinitePwmUsingDelayPeriodOnDuration(callbacks::startPwmPowerEventCallback,
                                                                              callbacks::stopPwmEventCallback,
                                                                              delay,
                                                                              pattern_period,
@@ -129,6 +130,13 @@ void openRelayEventCallback(int relay)
   controller.openRelay(relay);
 }
 
+void pwmRelayEventCallback(int index)
+{
+  int relay = indexed_patterns[index].relay;
+  int power = indexed_patterns[index].power;
+  controller.pwmRelay(relay,power);
+}
+
 void startPwmEventCallback(int index)
 {
   int relay = indexed_patterns[index].relay;
@@ -141,6 +149,19 @@ void startPwmEventCallback(int index)
                                                                                period,
                                                                                on_duration,
                                                                                relay);
+}
+
+void startPwmPowerEventCallback(int index)
+{
+  long period = indexed_patterns[index].pwm_period;
+  long on_duration = indexed_patterns[index].pwm_on_duration;
+  indexed_patterns[index].event_id_pair =
+    EventController::event_controller.addInfinitePwmUsingDelayPeriodOnDuration(callbacks::pwmRelayEventCallback,
+                                                                               callbacks::openRelayEventCallback,
+                                                                               0,
+                                                                               period,
+                                                                               on_duration,
+                                                                               index);
 }
 
 void stopPwmEventCallback(int index)

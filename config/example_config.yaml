@@ -14,7 +14,7 @@ white_light:
   pwm_off_duration_hours: 12
   pattern_on_duration_days: 3
   pattern_off_duration_days: 3
-  power: 100 # 0 <= power <= 255
+  power: 100 # 0 <= power <= 255, 0 is always off, 255 is always on
   start:
     offset_days: 0 # -1 <= offset_days <= 10, -1 is start immediately, 0 is today, 1 is tomorrow, etc.
     hour: 16 # 0 <= hour < 24, 9 is 9AM, 16 is 4PM, etc.
