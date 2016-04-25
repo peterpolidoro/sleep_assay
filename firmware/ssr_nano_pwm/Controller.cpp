@@ -21,6 +21,7 @@ void Controller::setup()
     pinMode(constants::relay_pins[relay],OUTPUT);
     openRelay(relay);
   }
+  setAllPwmStatusStopped();
 
   // Setup Streams
   Serial.begin(constants::baudrate);
@@ -49,16 +50,19 @@ SerialReceiver& Controller::getSerialReceiver()
 void Controller::closeRelay(int relay)
 {
   digitalWrite(constants::relay_pins[relay],HIGH);
+  relays_status_[relay] = constants::RELAY_CLOSED;
 }
 
 void Controller::openRelay(int relay)
 {
   digitalWrite(constants::relay_pins[relay],LOW);
+  relays_status_[relay] = constants::RELAY_OPEN;
 }
 
-void Controller::pwmRelay(int relay, int duty_cycle)
+void Controller::highFreqPwmRelay(int relay, int duty_cycle)
 {
   analogWrite(constants::relay_pins[relay],duty_cycle);
+  relays_status_[relay] = constants::RELAY_HIGH_FREQ_PWM;
 }
 
 void Controller::openAllRelays()
@@ -67,6 +71,34 @@ void Controller::openAllRelays()
   {
     openRelay(relay);
   }
+}
+
+void Controller::setPwmStatusRunning(int relay)
+{
+  pwm_status_[relay] = constants::PWM_RUNNING;
+}
+
+void Controller::setPwmStatusStopped(int relay)
+{
+  pwm_status_[relay] = constants::PWM_STOPPED;
+}
+
+void Controller::setAllPwmStatusStopped()
+{
+  for (uint8_t relay=0; relay<constants::RELAY_COUNT; ++relay)
+  {
+    setPwmStatusStopped(relay);
+  }
+}
+
+constants::RelayStatus Controller::getRelayStatus(int relay)
+{
+  return relays_status_[relay];
+}
+
+constants::PwmStatus Controller::getPwmStatus(int relay)
+{
+  return pwm_status_[relay];
 }
 
 void Controller::processMessage()
@@ -88,6 +120,12 @@ void Controller::processMessage()
       break;
     case constants::METHOD_ID_STOP_ALL_PULSES:
       callbacks::stopAllPwmCallback();
+      break;
+    case constants::METHOD_ID_GET_RELAYS_STATUS:
+      callbacks::getRelaysStatusCallback();
+      break;
+    case constants::METHOD_ID_GET_PWM_STATUS:
+      callbacks::getPwmStatusCallback();
       break;
     default:
       break;

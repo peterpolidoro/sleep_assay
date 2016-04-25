@@ -33,10 +33,18 @@ void startPwmPatternPowerCallback();
 
 void stopAllPwmCallback();
 
+void getRelaysStatusCallback();
+
+void getPwmStatusCallback();
+
 // EventController Callbacks
 void closeRelayEventCallback(int relay);
 
 void openRelayEventCallback(int relay);
+
+void setPwmStatusRunningEventCallback(int relay);
+
+void highFreqPwmRelayEventCallback(int index);
 
 void startPwmEventCallback(int index);
 

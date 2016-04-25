@@ -8,6 +8,7 @@ import sys
 import argparse
 import datetime
 import platform
+import json
 
 from serial_device2 import SerialDevice, SerialDevices, find_serial_device_ports, WriteFrequencyError
 
@@ -36,6 +37,8 @@ class SleepAssay(object):
     _METHOD_ID_START_PWM_PATTERN = 1
     _METHOD_ID_START_PWM_PATTERN_POWER = 2
     _METHOD_ID_STOP_ALL_PULSES = 3
+    _METHOD_ID_GET_RELAYS_STATUS= 4
+    _METHOD_ID_GET_PWM_STATUS = 5
 
     def __init__(self,config_file_path,*args,**kwargs):
         if 'debug' in kwargs:
@@ -99,6 +102,18 @@ class SleepAssay(object):
         bytes_written = self._serial_device.write_check_freq(request,
                                                              delay_write=True)
         return bytes_written
+
+    def _send_request_get_result(self,*args):
+        '''
+        Sends request to server over serial port and
+        returns response result
+        '''
+        request = self._args_to_request(*args)
+        self._debug_print('request', request)
+        response = self._serial_device.write_read(request,use_readline=True,check_write_freq=True)
+        self._debug_print('response', response)
+        result = json.loads(response)
+        return result
 
     def _close(self):
         '''
@@ -199,6 +214,18 @@ class SleepAssay(object):
         '''
         '''
         self._send_request(self._METHOD_ID_STOP_ALL_PULSES)
+
+    def _get_relays_status(self):
+        '''
+        '''
+        result = self._send_request_get_result(self._METHOD_ID_GET_RELAYS_STATUS)
+        return result
+
+    def _get_pwm_status(self):
+        '''
+        '''
+        result = self._send_request_get_result(self._METHOD_ID_GET_PWM_STATUS)
+        return result
 
     def _start_to_start_datetime(self,start):
         now_datetime = datetime.datetime.now()
@@ -329,6 +356,16 @@ class SleepAssay(object):
                                    self._config['red_light']['pattern_on_duration_hours'],
                                    self._config['red_light']['pattern_off_duration_hours'],
                                    self._config['red_light']['start'])
+        while(True):
+            time.sleep(1)
+            relays_status = self._get_relays_status()
+            pwm_status = self._get_pwm_status()
+            camera_relay = self._config['camera']['relay']
+            white_light_relay = self._config['white_light']['relay']
+            red_light_relay = self._config['red_light']['relay']
+            print("camera_trigger =  {0}".format(pwm_status[camera_relay]))
+            print("white light =  {0}".format(relays_status[white_light_relay]))
+            print("red_light =  {0}".format(pwm_status[red_light_relay]))
 
 
 def main(args=None):
@@ -343,8 +380,6 @@ def main(args=None):
 
     sa = SleepAssay(config_file_path)
     sa.start()
-    while(True):
-        pass
 
 
 # -----------------------------------------------------------------------------------------
