@@ -22,15 +22,8 @@ enum
     METHOD_ID_START_PWM_PATTERN,
     METHOD_ID_START_PWM_PATTERN_POWER,
     METHOD_ID_STOP_ALL_PULSES,
-    METHOD_ID_GET_RELAYS_STATUS,
+    METHOD_ID_GET_POWER,
     METHOD_ID_GET_PWM_STATUS,
-  };
-
-enum RelayStatus
-  {
-    RELAY_OPEN=0,
-    RELAY_CLOSED=1,
-    RELAY_HIGH_FREQ_PWM=2,
   };
 
 enum PwmStatus
@@ -43,6 +36,9 @@ extern const unsigned int baudrate;
 
 extern const uint8_t relay_pins[RELAY_COUNT];
 extern const uint8_t high_freq_relay_pins[HIGH_FREQ_RELAY_COUNT];
+
+extern const int power_min;
+extern const int power_max;
 
 }
 #endif

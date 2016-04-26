@@ -78,6 +78,14 @@ void startPwmPatternPowerCallback()
   long pattern_on_duration = serial_receiver.readLong(5);
   long delay = serial_receiver.readLong(6);
   int power = serial_receiver.readInt(7);
+  if (power < constants::power_min)
+  {
+    power = constants::power_min;
+  }
+  else if (power > constants::power_max)
+  {
+    power = constants::power_max;
+  }
   // Serial << "relay = " << relay << "\n";
   // Serial << "pwm_period_period = " << pwm_period << "\n";
   // Serial << "pwm_on_duration = " << pwm_on_duration << "\n";
@@ -121,18 +129,18 @@ void stopAllPwmCallback()
   controller.setAllPwmStatusStopped();
 }
 
-void getRelaysStatusCallback()
+void getPowerCallback()
 {
   Serial << "[";
-  constants::RelayStatus relay_status;
+  int power;
   for (uint8_t relay=0; relay<constants::RELAY_COUNT; ++relay)
   {
     if (relay > 0)
     {
       Serial << ",";
     }
-    relay_status = controller.getRelayStatus(relay);
-    Serial << relay_status;
+    power = controller.getPower(relay);
+    Serial << power;
   }
   Serial << "]\n";
 }

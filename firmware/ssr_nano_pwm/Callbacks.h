@@ -33,7 +33,7 @@ void startPwmPatternPowerCallback();
 
 void stopAllPwmCallback();
 
-void getRelaysStatusCallback();
+void getPowerCallback();
 
 void getPwmStatusCallback();
 

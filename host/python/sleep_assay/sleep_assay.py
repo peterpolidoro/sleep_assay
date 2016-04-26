@@ -9,10 +9,12 @@ import argparse
 import datetime
 import platform
 import json
+import csv
+import os
 
 from serial_device2 import SerialDevice, SerialDevices, find_serial_device_ports, WriteFrequencyError
 
-DEBUG = True
+DEBUG = False
 BAUDRATE = 9600
 
 
@@ -37,10 +39,14 @@ class SleepAssay(object):
     _METHOD_ID_START_PWM_PATTERN = 1
     _METHOD_ID_START_PWM_PATTERN_POWER = 2
     _METHOD_ID_STOP_ALL_PULSES = 3
-    _METHOD_ID_GET_RELAYS_STATUS= 4
+    _METHOD_ID_GET_POWER = 4
     _METHOD_ID_GET_PWM_STATUS = 5
 
+    _PWM_STOPPED = 0
+    _PWM_RUNNING = 1
+
     def __init__(self,config_file_path,*args,**kwargs):
+        self._config_file_path = os.path.abspath(config_file_path)
         if 'debug' in kwargs:
             self.debug = kwargs['debug']
         else:
@@ -76,6 +82,14 @@ class SleepAssay(object):
         self._serial_device = SerialDevice(*args,**kwargs)
         atexit.register(self._exit_sleep_assay)
         time.sleep(self._RESET_DELAY)
+        self._csv_file = None
+        self._csv_writer = None
+        self._header = ['row',
+                        'video_frame',
+                        'date_time',
+                        'camera_trigger_on_off',
+                        'white_light_power',
+                        'red_light_on_off']
         t_end = time.time()
         self._debug_print('Initialization time =', (t_end - t_start))
 
@@ -215,10 +229,10 @@ class SleepAssay(object):
         '''
         self._send_request(self._METHOD_ID_STOP_ALL_PULSES)
 
-    def _get_relays_status(self):
+    def _get_power(self):
         '''
         '''
-        result = self._send_request_get_result(self._METHOD_ID_GET_RELAYS_STATUS)
+        result = self._send_request_get_result(self._METHOD_ID_GET_POWER)
         return result
 
     def _get_pwm_status(self):
@@ -236,31 +250,53 @@ class SleepAssay(object):
                                            offset_datetime.day,
                                            start['hour'],
                                            start['minute'])
+        delta = start_datetime - now_datetime
+        delay = int(self._MILLISECONDS_PER_SECOND*delta.total_seconds())
+        if delay < 0:
+            start_datetime = now_datetime
+        print('  start:')
+        print('    {0}-{1}-{2}-{3}-{4}'.format(start_datetime.year,
+                                               start_datetime.month,
+                                               start_datetime.day,
+                                               start_datetime.hour,
+                                               start_datetime.minute))
         return start_datetime
 
     def _start_datetime_to_delay(self,start_datetime):
         now_datetime = datetime.datetime.now()
         delta = start_datetime - now_datetime
         delay = int(self._MILLISECONDS_PER_SECOND*delta.total_seconds())
-        self._debug_print('  start:')
         if delay < 0:
             delay = 0
-            self._debug_print('    {0}-{1}-{2}-{3}:{4}'.format(now_datetime.year,
-                                                               now_datetime.month,
-                                                               now_datetime.day,
-                                                               now_datetime.hour,
-                                                               now_datetime.minute))
-        else:
-            self._debug_print('    {0}-{1}-{2}-{3}:{4}'.format(start_datetime.year,
-                                                               start_datetime.month,
-                                                               start_datetime.day,
-                                                               start_datetime.hour,
-                                                               start_datetime.minute))
         return delay
 
+    def _writerow(self,columns):
+        if self._csv_writer is not None:
+            utf8row = []
+            for col in columns:
+                utf8row.append(str(col).encode('utf8'))
+            self._csv_writer.writerow(utf8row)
+
+    def _get_date_str(self):
+        today = datetime.date.today()
+        date_str = "{year}-{month}-{day}".format(year=today.year,
+                                                 month=today.month,
+                                                 day=today.day)
+        return date_str
+
+    def _get_time_str(self):
+        localtime = time.localtime()
+        time_str = "{hour}-{min}-{sec}".format(hour=localtime.tm_hour,
+                                               min=localtime.tm_min,
+                                               sec=localtime.tm_sec)
+        return time_str
+
+    def _get_date_time_str(self):
+        date_str = self._get_date_str()
+        time_str = self._get_time_str()
+        return date_str + '-' + time_str
+
     def start_board_indicator_light_cycle(self,relay):
-        self._debug_print('start_board_indicator_light_cycle:')
-        self._BOARD_INDICATOR_LIGHT_FREQUENCY
         self._start_pwm_frequency_duty_cycle(relay,
                                              self._BOARD_INDICATOR_LIGHT_FREQUENCY,
                                              self._BOARD_INDICATOR_LIGHT_DUTY_CYCLE,
@@ -270,15 +306,16 @@ class SleepAssay(object):
                              relay,
                              frame_rate,
                              start):
-        self._debug_print('start_camera_trigger:')
-        self._debug_print('  relay = {0}'.format(relay))
-        self._debug_print('  frame_rate = {0}'.format(frame_rate))
+        print('start_camera_trigger:')
+        print('  relay = {0}'.format(relay))
+        print('  frame_rate = {0}'.format(frame_rate))
         start_datetime = self._start_to_start_datetime(start)
         delay = self._start_datetime_to_delay(start_datetime)
         self._start_pwm_frequency_duty_cycle(relay,
                                              frame_rate,
                                              self._CAMERA_TRIGGER_DUTY_CYCLE,
                                              delay)
+        return start_datetime
 
     def start_white_light_cycle(self,
                                 relay,
@@ -288,13 +325,13 @@ class SleepAssay(object):
                                 pattern_off_duration_days,
                                 power,
                                 start):
-        self._debug_print('start_white_light_cycle:')
-        self._debug_print('  relay = {0}'.format(relay))
-        self._debug_print('  pwm_on_duration_hours = {0}'.format(pwm_on_duration_hours))
-        self._debug_print('  pwm_off_duration_hours = {0}'.format(pwm_off_duration_hours))
-        self._debug_print('  pattern_on_duration_days = {0}'.format(pattern_on_duration_days))
-        self._debug_print('  pattern_off_duration_days = {0}'.format(pattern_off_duration_days))
-        self._debug_print('  power = {0}'.format(power))
+        print('start_white_light_cycle:')
+        print('  relay = {0}'.format(relay))
+        print('  pwm_on_duration_hours = {0}'.format(pwm_on_duration_hours))
+        print('  pwm_off_duration_hours = {0}'.format(pwm_off_duration_hours))
+        print('  pattern_on_duration_days = {0}'.format(pattern_on_duration_days))
+        print('  pattern_off_duration_days = {0}'.format(pattern_off_duration_days))
+        print('  power = {0}'.format(power))
         start_datetime = self._start_to_start_datetime(start)
         pwm_period = (pwm_on_duration_hours + pwm_off_duration_hours)*self._MILLISECONDS_PER_HOUR
         pwm_on_duration = pwm_on_duration_hours*self._MILLISECONDS_PER_HOUR
@@ -316,12 +353,12 @@ class SleepAssay(object):
                               pattern_on_duration_hours,
                               pattern_off_duration_hours,
                               start):
-        self._debug_print('start_white_light_cycle:')
-        self._debug_print('  relay = {0}'.format(relay))
-        self._debug_print('  pwm_frequency = {0}'.format(pwm_frequency))
-        self._debug_print('  pwm_duty_cycle = {0}'.format(pwm_duty_cycle))
-        self._debug_print('  pattern_on_duration_hours = {0}'.format(pattern_on_duration_hours))
-        self._debug_print('  pattern_off_duration_hours = {0}'.format(pattern_off_duration_hours))
+        print('start_red_light_cycle:')
+        print('  relay = {0}'.format(relay))
+        print('  pwm_frequency = {0}'.format(pwm_frequency))
+        print('  pwm_duty_cycle = {0}'.format(pwm_duty_cycle))
+        print('  pattern_on_duration_hours = {0}'.format(pattern_on_duration_hours))
+        print('  pattern_off_duration_hours = {0}'.format(pattern_off_duration_hours))
         start_datetime = self._start_to_start_datetime(start)
         pwm_period = 1000/pwm_frequency
         pwm_on_duration = (pwm_duty_cycle/100)*pwm_period
@@ -335,14 +372,31 @@ class SleepAssay(object):
                                 pattern_on_duration,
                                 delay)
 
+    def start_data_writer(self):
+        if self._csv_writer is None:
+            user_home_dir = os.path.expanduser('~')
+            date_str = self._get_date_str()
+            output_dir = os.path.join(user_home_dir,'sleep_assay_data',date_str)
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+            date_time_str = self._get_date_time_str()
+            output_path = os.path.join(output_dir,date_time_str + '-data.txt')
+
+            self._csv_file = open(output_path, 'w')
+
+            # Create a new csv writer object to use as the output formatter
+            self._csv_writer = csv.writer(self._csv_file,quotechar='\"',quoting=csv.QUOTE_MINIMAL)
+            self._writerow(self._header)
+            return output_path
+
     def stop(self):
         self._stop_all_pulses()
 
     def start(self):
         self.start_board_indicator_light_cycle(self._config['board_indicator_light']['relay'])
-        self.start_camera_trigger(self._config['camera']['relay'],
-                                  self._config['camera']['frame_rate_hz'],
-                                  self._config['camera']['start'])
+        experiment_start_datetime = self.start_camera_trigger(self._config['camera_trigger']['relay'],
+                                                              self._config['camera_trigger']['frame_rate_hz'],
+                                                              self._config['camera_trigger']['start'])
         self.start_white_light_cycle(self._config['white_light']['relay'],
                                      self._config['white_light']['pwm_on_duration_hours'],
                                      self._config['white_light']['pwm_off_duration_hours'],
@@ -356,16 +410,51 @@ class SleepAssay(object):
                                    self._config['red_light']['pattern_on_duration_hours'],
                                    self._config['red_light']['pattern_off_duration_hours'],
                                    self._config['red_light']['start'])
-        while(True):
-            time.sleep(1)
-            relays_status = self._get_relays_status()
+        print('config_file_path:')
+        print(self._config_file_path)
+        print('data_file_path:')
+        data_file_path = self.start_data_writer()
+        print(data_file_path)
+        print('experiment_start:')
+        print('{0}-{1}-{2}-{3}-{4}-{5}'.format(experiment_start_datetime.year,
+                                               experiment_start_datetime.month,
+                                               experiment_start_datetime.day,
+                                               experiment_start_datetime.hour,
+                                               experiment_start_datetime.minute,
+                                               experiment_start_datetime.second))
+        experiment_duration = datetime.timedelta(self._config['experiment_duration_days'])
+        experiment_end_datetime = experiment_start_datetime + experiment_duration
+        print('experiment_end:')
+        print('{0}-{1}-{2}-{3}-{4}-{5}'.format(experiment_end_datetime.year,
+                                               experiment_end_datetime.month,
+                                               experiment_end_datetime.day,
+                                               experiment_end_datetime.hour,
+                                               experiment_end_datetime.minute,
+                                               experiment_end_datetime.second))
+        row_n = 0
+        video_frame = -1
+        while(datetime.datetime.now() < experiment_end_datetime):
+            row = []
+            row.append(row_n)
+            time.sleep(1/self._config['camera_trigger']['frame_rate_hz'])
+            power = self._get_power()
             pwm_status = self._get_pwm_status()
-            camera_relay = self._config['camera']['relay']
-            white_light_relay = self._config['white_light']['relay']
-            red_light_relay = self._config['red_light']['relay']
-            print("camera_trigger =  {0}".format(pwm_status[camera_relay]))
-            print("white light =  {0}".format(relays_status[white_light_relay]))
-            print("red_light =  {0}".format(pwm_status[red_light_relay]))
+            camera_trigger_on = pwm_status[self._config['camera_trigger']['relay']]
+            white_light_power = power[self._config['white_light']['relay']]
+            red_light_on = pwm_status[self._config['red_light']['relay']]
+            if camera_trigger_on:
+                video_frame += 1
+            row.append(video_frame)
+            date_time = self._get_date_time_str()
+            row.append(date_time)
+            row.append(camera_trigger_on)
+            row.append(white_light_power)
+            row.append(red_light_on)
+            self._writerow(row)
+            row_n += 1
+            # print("camera_trigger =  {0}".format(pwm_status[camera_trigger_relay]))
+            # print("white light =  {0}".format(power[white_light_relay]))
+            # print("red_light =  {0}".format(pwm_status[red_light_relay]))
 
 
 def main(args=None):
@@ -376,7 +465,6 @@ def main(args=None):
 
     args = parser.parse_args()
     config_file_path = args.config_file_path
-    print("Config File Path: {0}".format(config_file_path))
 
     sa = SleepAssay(config_file_path)
     sa.start()
