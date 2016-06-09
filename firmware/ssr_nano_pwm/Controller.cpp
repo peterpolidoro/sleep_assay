@@ -59,10 +59,17 @@ void Controller::openRelay(int relay)
   power_[relay] = constants::power_min;
 }
 
-void Controller::highFreqPwmRelay(int relay, int power)
+void Controller::setRelayPower(int relay, int power)
 {
-  analogWrite(constants::relay_pins[relay],power);
-  power_[relay] = power;
+  if (power >= constants::power_max)
+  {
+    closeRelay(relay);
+  }
+  else
+  {
+    analogWrite(constants::relay_pins[relay],power);
+    power_[relay] = power;
+  }
 }
 
 void Controller::openAllRelays()
@@ -73,21 +80,24 @@ void Controller::openAllRelays()
   }
 }
 
-void Controller::setPwmStatusRunning(int relay)
+void Controller::setPwmStatusRunning(int relay, int level)
 {
-  pwm_status_[relay] = constants::PWM_RUNNING;
+  pwm_status_[relay][level] = constants::PWM_RUNNING;
 }
 
-void Controller::setPwmStatusStopped(int relay)
+void Controller::setPwmStatusStopped(int relay, int level)
 {
-  pwm_status_[relay] = constants::PWM_STOPPED;
+  pwm_status_[relay][level] = constants::PWM_STOPPED;
 }
 
 void Controller::setAllPwmStatusStopped()
 {
   for (uint8_t relay=0; relay<constants::RELAY_COUNT; ++relay)
   {
-    setPwmStatusStopped(relay);
+    for (uint8_t level=0; level<constants::PWM_LEVEL_COUNT_MAX; ++level)
+    {
+      setPwmStatusStopped(relay,level);
+    }
   }
 }
 
@@ -96,9 +106,9 @@ int Controller::getPower(int relay)
   return power_[relay];
 }
 
-constants::PwmStatus Controller::getPwmStatus(int relay)
+constants::PwmStatus Controller::getPwmStatus(int relay, int level)
 {
-  return pwm_status_[relay];
+  return pwm_status_[relay][level];
 }
 
 void Controller::processMessage()
@@ -111,12 +121,6 @@ void Controller::processMessage()
   {
     case constants::METHOD_ID_START_PWM:
       callbacks::startPwmCallback();
-      break;
-    case constants::METHOD_ID_START_PWM_PATTERN:
-      callbacks::startPwmPatternCallback();
-      break;
-    case constants::METHOD_ID_START_PWM_PATTERN_POWER:
-      callbacks::startPwmPatternPowerCallback();
       break;
     case constants::METHOD_ID_STOP_ALL_PULSES:
       callbacks::stopAllPwmCallback();

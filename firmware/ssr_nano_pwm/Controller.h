@@ -23,17 +23,17 @@ public:
 
   void closeRelay(int relay);
   void openRelay(int relay);
-  void highFreqPwmRelay(int relay, int power);
+  void setRelayPower(int relay, int power);
   void openAllRelays();
-  void setPwmStatusRunning(int relay);
-  void setPwmStatusStopped(int relay);
+  void setPwmStatusRunning(int relay, int level);
+  void setPwmStatusStopped(int relay, int level);
   void setAllPwmStatusStopped();
   int getPower(int relay);
-  constants::PwmStatus getPwmStatus(int relay);
+  constants::PwmStatus getPwmStatus(int relay, int level);
 private:
   SerialReceiver serial_receiver_;
   int power_[constants::RELAY_COUNT];
-  constants::PwmStatus pwm_status_[constants::RELAY_COUNT];
+  constants::PwmStatus pwm_status_[constants::RELAY_COUNT][constants::PWM_LEVEL_COUNT_MAX];
   void processMessage();
 };
 

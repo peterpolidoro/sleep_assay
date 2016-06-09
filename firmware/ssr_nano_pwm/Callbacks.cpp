@@ -11,73 +11,15 @@
 namespace callbacks
 {
 
-SerialReceiver& serial_receiver = controller.getSerialReceiver();
+SerialReceiver& g_serial_receiver = controller.getSerialReceiver();
 
-IndexedContainer<PatternInfo,constants::INDEXED_PATTERNS_COUNT_MAX> indexed_patterns;
+IndexedContainer<PwmInfo,constants::INDEXED_PWMS_COUNT_MAX> g_indexed_pwms;
 
 void startPwmCallback()
 {
-  int relay = serial_receiver.readInt(1);
-  long period = serial_receiver.readLong(2);
-  long on_duration = serial_receiver.readLong(3);
-  long delay = serial_receiver.readLong(4);
-  // Serial << "relay = " << relay << "\n";
-  // Serial << "period = " << period << "\n";
-  // Serial << "on_duration = " << on_duration << "\n";
-  // Serial << "delay = " << delay << "\n";
-  EventController::event_controller.addInfinitePwmUsingDelayPeriodOnDuration(closeRelayEventCallback,
-                                                                             openRelayEventCallback,
-                                                                             delay,
-                                                                             period,
-                                                                             on_duration,
-                                                                             relay,
-                                                                             setPwmStatusRunningEventCallback);
-}
-
-void startPwmPatternCallback()
-{
-  if (indexed_patterns.full())
-  {
-    return;
-  }
-  int relay = serial_receiver.readInt(1);
-  long pwm_period = serial_receiver.readLong(2);
-  long pwm_on_duration = serial_receiver.readLong(3);
-  long pattern_period = serial_receiver.readLong(4);
-  long pattern_on_duration = serial_receiver.readLong(5);
-  long delay = serial_receiver.readLong(6);
-  // Serial << "relay = " << relay << "\n";
-  // Serial << "pwm_period_period = " << pwm_period << "\n";
-  // Serial << "pwm_on_duration = " << pwm_on_duration << "\n";
-  // Serial << "pattern_period = " << pattern_period << "\n";
-  // Serial << "pattern_on_duration = " << pattern_on_duration << "\n";
-  // Serial << "delay = " << delay << "\n";
-  PatternInfo pattern_info;
-  pattern_info.relay = relay;
-  pattern_info.pwm_period = pwm_period;
-  pattern_info.pwm_on_duration = pwm_on_duration;
-  int index = indexed_patterns.add(pattern_info);
-  EventController::event_controller.addInfinitePwmUsingDelayPeriodOnDuration(startPwmEventCallback,
-                                                                             stopPwmEventCallback,
-                                                                             delay,
-                                                                             pattern_period,
-                                                                             pattern_on_duration,
-                                                                             index);
-}
-
-void startPwmPatternPowerCallback()
-{
-  if (indexed_patterns.full())
-  {
-    return;
-  }
-  int relay = serial_receiver.readInt(1);
-  long pwm_period = serial_receiver.readLong(2);
-  long pwm_on_duration = serial_receiver.readLong(3);
-  long pattern_period = serial_receiver.readLong(4);
-  long pattern_on_duration = serial_receiver.readLong(5);
-  long delay = serial_receiver.readLong(6);
-  int power = serial_receiver.readInt(7);
+  int serial_receiver_position = 1;
+  int relay = g_serial_receiver.readInt(serial_receiver_position++);
+  int power = g_serial_receiver.readInt(serial_receiver_position++);
   if (power < constants::power_min)
   {
     power = constants::power_min;
@@ -86,45 +28,76 @@ void startPwmPatternPowerCallback()
   {
     power = constants::power_max;
   }
-  // Serial << "relay = " << relay << "\n";
-  // Serial << "pwm_period_period = " << pwm_period << "\n";
-  // Serial << "pwm_on_duration = " << pwm_on_duration << "\n";
-  // Serial << "pattern_period = " << pattern_period << "\n";
-  // Serial << "pattern_on_duration = " << pattern_on_duration << "\n";
-  // Serial << "delay = " << delay << "\n";
-  // Serial << "power = " << power << "\n";
-  uint8_t relay_pin = constants::relay_pins[relay];
-  bool relay_pin_is_high_freq = false;
-  for (uint8_t r=0; r<constants::HIGH_FREQ_RELAY_COUNT; ++r)
+  if (power < constants::power_max)
   {
-    if (relay_pin == constants::high_freq_relay_pins[r])
+    uint8_t relay_pin = constants::relay_pins[relay];
+    bool relay_pin_is_high_freq = false;
+    for (uint8_t r=0; r<constants::HIGH_FREQ_RELAY_COUNT; ++r)
     {
-      relay_pin_is_high_freq = true;
+      if (relay_pin == constants::high_freq_relay_pins[r])
+      {
+        relay_pin_is_high_freq = true;
+        break;
+      }
+    }
+    if (!relay_pin_is_high_freq)
+    {
+      power = constants::power_max;
     }
   }
-  // Serial << "relay_pin_is_high_freq = " << relay_pin_is_high_freq << "\n";
-  if (!relay_pin_is_high_freq)
+
+  long delay = g_serial_receiver.readLong(serial_receiver_position++);
+  int pwm_level_count = g_serial_receiver.readInt(serial_receiver_position++);
+  if (pwm_level_count < constants::PWM_LEVEL_COUNT_MIN)
+  {
+    pwm_level_count = constants::PWM_LEVEL_COUNT_MIN;
+  }
+  else if (pwm_level_count > constants::PWM_LEVEL_COUNT_MAX)
+  {
+    pwm_level_count = constants::PWM_LEVEL_COUNT_MAX;
+  }
+  if ((g_indexed_pwms.max_size() - g_indexed_pwms.size()) < pwm_level_count)
   {
     return;
   }
-  PatternInfo pattern_info;
-  pattern_info.relay = relay;
-  pattern_info.pwm_period = pwm_period;
-  pattern_info.pwm_on_duration = pwm_on_duration;
-  pattern_info.power = power;
-  int index = indexed_patterns.add(pattern_info);
-  EventController::event_controller.addInfinitePwmUsingDelayPeriodOnDuration(startPwmPowerEventCallback,
+
+  long period = g_serial_receiver.readLong(serial_receiver_position++);
+  long on_duration = g_serial_receiver.readLong(serial_receiver_position++);
+
+  PwmInfo pwm_info;
+  pwm_info.relay = relay;
+  pwm_info.power = power;
+  pwm_info.level = 0;
+  pwm_info.child_index = -1;
+  pwm_info.period = period;
+  pwm_info.on_duration = on_duration;
+  int index = g_indexed_pwms.add(pwm_info);
+
+  for (int pwm_level=1; pwm_level < pwm_level_count; ++pwm_level)
+  {
+    pwm_info.relay = relay;
+    pwm_info.power = power;
+    pwm_info.level = pwm_level;
+    pwm_info.child_index = index;
+    period = g_serial_receiver.readLong(serial_receiver_position++);
+    on_duration = g_serial_receiver.readLong(serial_receiver_position++);
+    pwm_info.period = period;
+    pwm_info.on_duration = on_duration;
+    index = g_indexed_pwms.add(pwm_info);
+  }
+
+  EventController::event_controller.addInfinitePwmUsingDelayPeriodOnDuration(startPowerPwmEventCallback,
                                                                              stopPwmEventCallback,
                                                                              delay,
-                                                                             pattern_period,
-                                                                             pattern_on_duration,
+                                                                             pwm_info.period,
+                                                                             pwm_info.on_duration,
                                                                              index);
 }
 
 void stopAllPwmCallback()
 {
   EventController::event_controller.removeAllEvents();
-  indexed_patterns.clear();
+  g_indexed_pwms.clear();
   controller.openAllRelays();
   controller.setAllPwmStatusStopped();
 }
@@ -155,71 +128,60 @@ void getPwmStatusCallback()
     {
       Serial << ",";
     }
-    pwm_status = controller.getPwmStatus(relay);
-    Serial << pwm_status;
+    Serial << "[";
+    for (uint8_t level=0; level<constants::PWM_LEVEL_COUNT_MAX; ++level)
+    {
+      if (level > 0)
+      {
+        Serial << ",";
+      }
+      pwm_status = controller.getPwmStatus(relay,level);
+      Serial << pwm_status;
+    }
+    Serial << "]";
   }
   Serial << "]\n";
 }
 
 // EventController Callbacks
-void closeRelayEventCallback(int relay)
+void startPowerPwmEventCallback(int index)
 {
-  controller.closeRelay(relay);
-}
-
-void openRelayEventCallback(int relay)
-{
-  controller.openRelay(relay);
-}
-
-void setPwmStatusRunningEventCallback(int relay)
-{
-  controller.setPwmStatusRunning(relay);
-}
-
-void highFreqPwmRelayEventCallback(int index)
-{
-  int relay = indexed_patterns[index].relay;
-  int power = indexed_patterns[index].power;
-  controller.highFreqPwmRelay(relay,power);
-}
-
-void startPwmEventCallback(int index)
-{
-  int relay = indexed_patterns[index].relay;
-  long period = indexed_patterns[index].pwm_period;
-  long on_duration = indexed_patterns[index].pwm_on_duration;
-  controller.setPwmStatusRunning(relay);
-  indexed_patterns[index].event_id_pair =
-    EventController::event_controller.addInfinitePwmUsingDelayPeriodOnDuration(closeRelayEventCallback,
-                                                                               openRelayEventCallback,
-                                                                               0,
-                                                                               period,
-                                                                               on_duration,
-                                                                               relay);
-}
-
-void startPwmPowerEventCallback(int index)
-{
-  long period = indexed_patterns[index].pwm_period;
-  long on_duration = indexed_patterns[index].pwm_on_duration;
-  int relay = indexed_patterns[index].relay;
-  controller.setPwmStatusRunning(relay);
-  indexed_patterns[index].event_id_pair =
-    EventController::event_controller.addInfinitePwmUsingDelayPeriodOnDuration(highFreqPwmRelayEventCallback,
-                                                                               openRelayEventCallback,
-                                                                               0,
-                                                                               period,
-                                                                               on_duration,
-                                                                               index);
+  int relay = g_indexed_pwms[index].relay;
+  int level = g_indexed_pwms[index].level;
+  controller.setPwmStatusRunning(relay,level);
+  int child_index = g_indexed_pwms[index].child_index;
+  if (child_index < 0)
+  {
+    int power = g_indexed_pwms[index].power;
+    controller.setRelayPower(relay,power);
+  }
+  else
+  {
+    long period = g_indexed_pwms[child_index].period;
+    long on_duration = g_indexed_pwms[child_index].on_duration;
+    int relay = g_indexed_pwms[child_index].relay;
+    g_indexed_pwms[child_index].event_id_pair =
+      EventController::event_controller.addInfinitePwmUsingDelayPeriodOnDuration(startPowerPwmEventCallback,
+                                                                                 stopPwmEventCallback,
+                                                                                 0,
+                                                                                 period,
+                                                                                 on_duration,
+                                                                                 child_index);
+  }
 }
 
 void stopPwmEventCallback(int index)
 {
-  EventController::event_controller.removeEventPair(indexed_patterns[index].event_id_pair);
-  int relay = indexed_patterns[index].relay;
+  int relay = g_indexed_pwms[index].relay;
   controller.openRelay(relay);
-  controller.setPwmStatusStopped(relay);
+  int level = g_indexed_pwms[index].level;
+  controller.setPwmStatusStopped(relay,level);
+  int child_index = g_indexed_pwms[index].child_index;
+  if (child_index >= 0)
+  {
+    EventController::event_controller.removeEventPair(g_indexed_pwms[child_index].event_id_pair);
+    stopPwmEventCallback(child_index);
+  }
 }
 
 }

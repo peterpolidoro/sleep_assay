@@ -16,20 +16,18 @@
 
 namespace callbacks
 {
-struct PatternInfo
+struct PwmInfo
 {
   int relay;
-  long pwm_period;
-  long pwm_on_duration;
   int power;
+  int level;
+  int child_index;
+  long period;
+  long on_duration;
   EventController::EventIdPair event_id_pair;
 };
 
 void startPwmCallback();
-
-void startPwmPatternCallback();
-
-void startPwmPatternPowerCallback();
 
 void stopAllPwmCallback();
 
@@ -38,17 +36,7 @@ void getPowerCallback();
 void getPwmStatusCallback();
 
 // EventController Callbacks
-void closeRelayEventCallback(int relay);
-
-void openRelayEventCallback(int relay);
-
-void setPwmStatusRunningEventCallback(int relay);
-
-void highFreqPwmRelayEventCallback(int index);
-
-void startPwmEventCallback(int index);
-
-void startPwmPowerEventCallback(int index);
+void startPowerPwmEventCallback(int index);
 
 void stopPwmEventCallback(int index);
 
