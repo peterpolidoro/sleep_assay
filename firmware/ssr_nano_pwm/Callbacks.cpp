@@ -19,6 +19,10 @@ void startPwmCallback()
 {
   int serial_receiver_position = 1;
   int relay = g_serial_receiver.readInt(serial_receiver_position++);
+  if ((relay < 0) || (relay >= constants::RELAY_COUNT))
+  {
+    return;
+  }
   int power = g_serial_receiver.readInt(serial_receiver_position++);
   if (power < constants::power_min)
   {
@@ -91,7 +95,8 @@ void startPwmCallback()
                                                                              delay,
                                                                              pwm_info.period,
                                                                              pwm_info.on_duration,
-                                                                             index);
+                                                                             index,
+                                                                             setParentPwmStatusRunningEventCallback);
 }
 
 void stopAllPwmCallback()
@@ -129,7 +134,7 @@ void getPwmStatusCallback()
       Serial << ",";
     }
     Serial << "[";
-    for (uint8_t level=0; level<constants::PWM_LEVEL_COUNT_MAX; ++level)
+    for (uint8_t level=0; level<=constants::PWM_LEVEL_COUNT_MAX; ++level)
     {
       if (level > 0)
       {
@@ -144,6 +149,13 @@ void getPwmStatusCallback()
 }
 
 // EventController Callbacks
+void setParentPwmStatusRunningEventCallback(int index)
+{
+  int relay = g_indexed_pwms[index].relay;
+  int level = g_indexed_pwms[index].level + 1;
+  controller.setPwmStatusRunning(relay,level);
+}
+
 void startPowerPwmEventCallback(int index)
 {
   int relay = g_indexed_pwms[index].relay;

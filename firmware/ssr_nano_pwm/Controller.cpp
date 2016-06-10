@@ -94,7 +94,7 @@ void Controller::setAllPwmStatusStopped()
 {
   for (uint8_t relay=0; relay<constants::RELAY_COUNT; ++relay)
   {
-    for (uint8_t level=0; level<constants::PWM_LEVEL_COUNT_MAX; ++level)
+    for (uint8_t level=0; level<=constants::PWM_LEVEL_COUNT_MAX; ++level)
     {
       setPwmStatusStopped(relay,level);
     }

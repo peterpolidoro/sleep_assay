@@ -14,7 +14,7 @@ import os
 
 from serial_device2 import SerialDevice, SerialDevices, find_serial_device_ports, WriteFrequencyError
 
-DEBUG = True
+DEBUG = False
 BAUDRATE = 9600
 
 
@@ -410,10 +410,10 @@ class SleepAssay(object):
             time.sleep(1/self._config['camera_trigger']['frame_rate_hz'])
             power = self._get_power()
             pwm_status = self._get_pwm_status()
-            camera_trigger_on = pwm_status[self._config['camera_trigger']['relay']][0]
-            white_light_pwm_status = pwm_status[self._config['white_light']['relay']][0:2]
+            camera_trigger_on = pwm_status[self._config['camera_trigger']['relay']][1]
+            white_light_pwm_status = pwm_status[self._config['white_light']['relay']][0:3]
             white_light_power = power[self._config['white_light']['relay']]
-            red_light_pwm_status = pwm_status[self._config['red_light']['relay']][0:3]
+            red_light_pwm_status = pwm_status[self._config['red_light']['relay']][0:4]
             if camera_trigger_on:
                 video_frame += 1
             row.append(video_frame)

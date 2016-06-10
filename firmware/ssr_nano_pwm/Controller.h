@@ -33,7 +33,7 @@ public:
 private:
   SerialReceiver serial_receiver_;
   int power_[constants::RELAY_COUNT];
-  constants::PwmStatus pwm_status_[constants::RELAY_COUNT][constants::PWM_LEVEL_COUNT_MAX];
+  constants::PwmStatus pwm_status_[constants::RELAY_COUNT][constants::PWM_LEVEL_COUNT_MAX+1];
   void processMessage();
 };
 

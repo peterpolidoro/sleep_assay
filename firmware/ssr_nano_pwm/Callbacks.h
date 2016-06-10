@@ -36,6 +36,8 @@ void getPowerCallback();
 void getPwmStatusCallback();
 
 // EventController Callbacks
+void setParentPwmStatusRunningEventCallback(int index);
+
 void startPowerPwmEventCallback(int index);
 
 void stopPwmEventCallback(int index);
