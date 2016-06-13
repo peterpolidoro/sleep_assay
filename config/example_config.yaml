@@ -1,36 +1,54 @@
-relay_board_serial_port_linux: /dev/ttyUSB0
-relay_board_serial_port_windows: COM6
-relay_board_serial_port_osx: /dev/tty.usbserial-11CP0195
+relay_board_serial_port:
+  linux: /dev/ttyUSB0
+  windows: COM6
+  osx: /dev/tty.usbserial-11CP0195
+relays:
+  camera_trigger: 0
+  white_light: 1
+  red_light: 2
+  board_indicator_light: 7
 camera_trigger:
-  relay: 0
   frame_rate_hz: 0.5
+entrainment:
+  white_light:
+    power: 100 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
+    pwm_on_duration_hours: 12
+    pwm_off_duration_hours: 12
   start:
     offset_days: 0 # -1 <= offset_days <= 10, -1 is start immediately, 0 is today, 1 is tomorrow, etc.
     hour: 16 # 0 <= hour < 24, 9 is 9AM, 16 is 4PM, etc.
     minute: 0 # 0 <= minute < 60, hour = 9 and minute = 0 is 9:00AM, hour = 16 and minute = 30 is 4:30PM, etc.
-white_light:
-  relay: 1
-  power: 100 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
-  pwm0_on_duration_hours: 12
-  pwm0_off_duration_hours: 12
-  pwm1_on_duration_days: 3
-  pwm1_off_duration_days: 3
-  start:
-    offset_days: 0 # -1 <= offset_days <= 10, -1 is start immediately, 0 is today, 1 is tomorrow, etc.
-    hour: 16 # 0 <= hour < 24, 9 is 9AM, 16 is 4PM, etc.
-    minute: 0 # 0 <= minute < 60, hour = 9 and minute = 0 is 9:00AM, hour = 16 and minute = 30 is 4:30PM, etc.
-red_light:
-  relay: 2
-  pwm0_frequency_hz: 10
-  pwm0_duty_cycle_percent: 50
-  pwm1_on_duration_hours: 12
-  pwm1_off_duration_hours: 12
-  pwm2_on_duration_days: 3
-  pwm2_off_duration_days: 3
-  start:
-    offset_days: 0 # -1 <= offset_days <= 10, -1 is start immediately, 0 is today, 1 is tomorrow, etc.
-    hour: 16 # 0 <= hour < 24, 9 is 9AM, 16 is 4PM, etc.
-    minute: 0 # 0 <= minute < 60, hour = 9 and minute = 0 is 9:00AM, hour = 16 and minute = 30 is 4:30PM, etc.
-board_indicator_light:
-  relay: 7
-experiment_duration_days: 7 # experiment begins at start of camera_trigger
+  duration_days: 3
+experiment:
+- white_light:
+    power: 100 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
+    pwm0_on_duration_hours: 12
+    pwm0_off_duration_hours: 12
+    pwm1_on_duration_days: 3
+    pwm1_off_duration_days: 1
+  red_light:
+    pwm0_frequency_hz: 10
+    pwm0_duty_cycle_percent: 50
+    pwm1_on_duration_hours: 12
+    pwm1_off_duration_hours: 12
+    delay_days: 3
+  duration_days: 4
+- white_light:
+    power: 100 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
+    pwm0_on_duration_hours: 12
+    pwm0_off_duration_hours: 12
+    pwm1_on_duration_days: 3
+    pwm1_off_duration_days: 1
+  red_light:
+    pwm0_frequency_hz: 10
+    pwm0_duty_cycle_percent: 50
+    pwm1_on_duration_hours: 12
+    pwm1_off_duration_hours: 12
+    delay_days: 3.5
+  duration_days: 4
+recovery:
+  white_light:
+    power: 100 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
+    pwm_on_duration_hours: 12
+    pwm_off_duration_hours: 12
+  duration_days: 2

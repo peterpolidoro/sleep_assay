@@ -64,20 +64,20 @@ class SleepAssay(object):
             self._config = yaml.load(config_stream)
         os_type = platform.system()
         if os_type == 'Linux':
-            if ('relay_board_serial_port_linux' not in self._config):
+            try:
+                kwargs['port'] = self._config['relay_board_serial_port']['linux']
+            except KeyError:
                 raise RuntimeError('Must specify linux serial port in config file!')
-            else:
-                kwargs['port'] = self._config['relay_board_serial_port_linux']
         elif os_type == 'Windows':
-            if ('relay_board_serial_port_windows' not in self._config):
+            try:
+                kwargs['port'] = self._config['relay_board_serial_port']['windows']
+            except KeyError:
                 raise RuntimeError('Must specify windows serial port in config file!')
-            else:
-                kwargs['port'] = self._config['relay_board_serial_port_windows']
         elif os_type == 'Darwin':
-            if ('relay_board_serial_port_osx' not in self._config):
+            try:
+                kwargs['port'] = self._config['relay_board_serial_port']['osx']
+            except KeyError:
                 raise RuntimeError('Must specify osx serial port in config file!')
-            else:
-                kwargs['port'] = self._config['relay_board_serial_port']
         t_start = time.time()
         self._serial_device = SerialDevice(*args,**kwargs)
         atexit.register(self._exit_sleep_assay)
