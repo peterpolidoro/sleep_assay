@@ -52,6 +52,24 @@ class PlotConfig(object):
         plt.yticks(np.linspace(0, 1, 2, endpoint=True))
         plt.title('entrainment')
 
+    def _plot_experiment(self):
+        config = self._config['experiment']
+        for run in range(len(config)):
+            duration = config[run]['duration_days']
+            t = np.linspace(0+run*duration, (run+1)*duration, self._MINUTES_PER_DAY, endpoint=False)
+
+            period = config[run]['white_light']['pwm_on_duration_hours'] + config[run]['white_light']['pwm_off_duration_hours']
+            duty_cycle = config[run]['white_light']['pwm_on_duration_hours'] / period
+
+            plt.subplot(2, 3, 2)
+            plt.plot(t, 0.5+0.5*signal.square(2 * np.pi * 24/period * t, duty_cycle))
+            plt.ylim(-0.1, 1.1)
+            plt.xlabel('days')
+            plt.xticks(np.linspace(0, duration, duration+1, endpoint=True))
+            plt.ylabel('white light')
+            plt.yticks(np.linspace(0, 1, 2, endpoint=True))
+            plt.title('experiment')
+
     def _plot_recovery(self):
         config = self._config['recovery']
         t = np.linspace(0, config['duration_days'], self._MINUTES_PER_DAY, endpoint=False)

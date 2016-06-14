@@ -51,6 +51,7 @@ void startPwmCallback()
   }
 
   long delay = g_serial_receiver.readLong(serial_receiver_position++);
+  long count = g_serial_receiver.readInt(serial_receiver_position++);
   int pwm_level_count = g_serial_receiver.readInt(serial_receiver_position++);
   if (pwm_level_count < constants::PWM_LEVEL_COUNT_MIN)
   {
@@ -90,13 +91,28 @@ void startPwmCallback()
     index = g_indexed_pwms.add(pwm_info);
   }
 
-  EventController::event_controller.addInfinitePwmUsingDelayPeriodOnDuration(startPowerPwmEventCallback,
-                                                                             stopPwmEventCallback,
-                                                                             delay,
-                                                                             pwm_info.period,
-                                                                             pwm_info.on_duration,
-                                                                             index,
-                                                                             setParentPwmStatusRunningEventCallback);
+  if (count < 0)
+  {
+    EventController::event_controller.addInfinitePwmUsingDelayPeriodOnDuration(startPowerPwmEventCallback,
+                                                                               stopPwmEventCallback,
+                                                                               delay,
+                                                                               pwm_info.period,
+                                                                               pwm_info.on_duration,
+                                                                               index,
+                                                                               setParentPwmStatusRunningEventCallback);
+  }
+  else
+  {
+    EventController::event_controller.addPwmUsingDelayPeriodOnDuration(startPowerPwmEventCallback,
+                                                                       stopPwmEventCallback,
+                                                                       delay,
+                                                                       pwm_info.period,
+                                                                       pwm_info.on_duration,
+                                                                       count,
+                                                                       index,
+                                                                       setParentPwmStatusRunningEventCallback,
+                                                                       setParentPwmStatusStoppedEventCallback);
+  }
 }
 
 void stopAllPwmCallback()
@@ -154,6 +170,24 @@ void setParentPwmStatusRunningEventCallback(int index)
   int relay = g_indexed_pwms[index].relay;
   int level = g_indexed_pwms[index].level + 1;
   controller.setPwmStatusRunning(relay,level);
+}
+
+void removeParentAndChildren(int index)
+{
+  if (index >= 0)
+  {
+    int child_index = g_indexed_pwms[index].child_index;
+    removeParentAndChildren(child_index);
+    g_indexed_pwms.remove(index);
+  }
+}
+
+void setParentPwmStatusStoppedEventCallback(int index)
+{
+  int relay = g_indexed_pwms[index].relay;
+  int level = g_indexed_pwms[index].level + 1;
+  controller.setPwmStatusStopped(relay,level);
+  removeParentAndChildren(index);
 }
 
 void startPowerPwmEventCallback(int index)
