@@ -11,10 +11,14 @@ import platform
 import json
 import csv
 import os
+import numpy as np
+import matplotlib.pyplot as plt
+import math
 
 from serial_device2 import SerialDevice, SerialDevices, find_serial_device_ports, WriteFrequencyError
 
-DEBUG = True
+DEBUG = False
+QUICK_TEST = False
 BAUDRATE = 9600
 
 
@@ -28,7 +32,7 @@ class SleepAssay(object):
     _CAMERA_TRIGGER_DUTY_CYCLE = 50
     _BOARD_INDICATOR_LIGHT_FREQUENCY = 2
     _BOARD_INDICATOR_LIGHT_DUTY_CYCLE = 50
-    if not DEBUG:
+    if not QUICK_TEST:
         _MILLISECONDS_PER_SECOND = 1000
     else:
         _MILLISECONDS_PER_SECOND = 1000/3600
@@ -92,7 +96,6 @@ class SleepAssay(object):
         self._header = ['video_frame',
                         'date_time',
                         'state',
-                        'white_light_pwm_status',
                         'white_light_power',
                         'red_light_pwm_status']
         t_end = time.time()
@@ -218,7 +221,7 @@ class SleepAssay(object):
                                            start['hour'],
                                            start['minute'])
         delta = start_datetime - now_datetime
-        delay = int(self._MILLISECONDS_PER_SECOND*delta.total_seconds())
+        delay = int(1000*delta.total_seconds())
         if delay < 0:
             start_datetime = now_datetime
         return start_datetime
@@ -226,7 +229,7 @@ class SleepAssay(object):
     def _start_datetime_to_delay(self,start_datetime):
         now_datetime = datetime.datetime.now()
         delta = start_datetime - now_datetime
-        delay = int(self._MILLISECONDS_PER_SECOND*delta.total_seconds())
+        delay = int(1000*delta.total_seconds())
         if delay < 0:
             delay = 0
         return delay
@@ -285,66 +288,6 @@ class SleepAssay(object):
                         [period],
                         [on_duration])
 
-    # def start_white_light_cycle(self,
-    #                             relay,
-    #                             power,
-    #                             pwm0_on_duration_hours,
-    #                             pwm0_off_duration_hours,
-    #                             pwm1_on_duration_days,
-    #                             pwm1_off_duration_days,
-    #                             start):
-    #     print('start_white_light_cycle:')
-    #     print('  relay = {0}'.format(relay))
-    #     print('  power = {0}'.format(power))
-    #     print('  pwm0_on_duration_hours = {0}'.format(pwm0_on_duration_hours))
-    #     print('  pwm0_off_duration_hours = {0}'.format(pwm0_off_duration_hours))
-    #     print('  pwm1_on_duration_days = {0}'.format(pwm1_on_duration_days))
-    #     print('  pwm1_off_duration_days = {0}'.format(pwm1_off_duration_days))
-    #     start_datetime = self._start_to_start_datetime(start)
-    #     pwm0_period = (pwm0_on_duration_hours + pwm0_off_duration_hours)*self._MILLISECONDS_PER_HOUR
-    #     pwm0_on_duration = pwm0_on_duration_hours*self._MILLISECONDS_PER_HOUR
-    #     pwm1_period = (pwm1_on_duration_days + pwm1_off_duration_days)*self._MILLISECONDS_PER_DAY
-    #     pwm1_on_duration = pwm1_on_duration_days*self._MILLISECONDS_PER_DAY
-    #     delay = self._start_datetime_to_delay(start_datetime)
-    #     self._start_pwm(relay,
-    #                     power,
-    #                     delay,
-    #                     2,
-    #                     [pwm0_period,pwm1_period],
-    #                     [pwm0_on_duration,pwm1_on_duration])
-
-    # def start_red_light_cycle(self,
-    #                           relay,
-    #                           pwm0_frequency,
-    #                           pwm0_duty_cycle,
-    #                           pwm1_on_duration_hours,
-    #                           pwm1_off_duration_hours,
-    #                           pwm2_on_duration_days,
-    #                           pwm2_off_duration_days,
-    #                           start):
-    #     print('start_red_light_cycle:')
-    #     print('  relay = {0}'.format(relay))
-    #     print('  pwm0_frequency = {0}'.format(pwm0_frequency))
-    #     print('  pwm0_duty_cycle = {0}'.format(pwm0_duty_cycle))
-    #     print('  pwm1_on_duration_hours = {0}'.format(pwm1_on_duration_hours))
-    #     print('  pwm1_off_duration_hours = {0}'.format(pwm1_off_duration_hours))
-    #     print('  pwm2_on_duration_days = {0}'.format(pwm2_on_duration_days))
-    #     print('  pwm2_off_duration_days = {0}'.format(pwm2_off_duration_days))
-    #     start_datetime = self._start_to_start_datetime(start)
-    #     pwm0_period = 1000/pwm0_frequency
-    #     pwm0_on_duration = (pwm0_duty_cycle/100)*pwm0_period
-    #     pwm1_period = (pwm1_on_duration_hours + pwm1_off_duration_hours)*self._MILLISECONDS_PER_HOUR
-    #     pwm1_on_duration = pwm1_on_duration_hours*self._MILLISECONDS_PER_HOUR
-    #     pwm2_period = (pwm2_on_duration_days + pwm2_off_duration_days)*self._MILLISECONDS_PER_DAY
-    #     pwm2_on_duration = pwm2_on_duration_days*self._MILLISECONDS_PER_DAY
-    #     delay = self._start_datetime_to_delay(start_datetime)
-    #     self._start_pwm(relay,
-    #                     self._POWER_MAX,
-    #                     delay,
-    #                     3,
-    #                     [pwm0_period,pwm1_period,pwm2_period],
-    #                     [pwm0_on_duration,pwm1_on_duration,pwm2_on_duration])
-
     def start_data_writer(self):
         if self._csv_writer is None:
             user_home_dir = os.path.expanduser('~')
@@ -378,9 +321,9 @@ class SleepAssay(object):
         power = config['white_light']['power']
         pwm0_on_duration_hours = config['white_light']['pwm0_on_duration_hours']
         pwm0_off_duration_hours = config['white_light']['pwm0_off_duration_hours']
-        pwm0_period = (pwm0_on_duration_hours + pwm0_off_duration_hours)*self._MILLISECONDS_PER_HOUR
-        pwm0_on_duration = pwm0_on_duration_hours*self._MILLISECONDS_PER_HOUR
         pwm0_period_hours = pwm0_on_duration_hours + pwm0_off_duration_hours
+        pwm0_period = pwm0_period_hours*self._MILLISECONDS_PER_HOUR
+        pwm0_on_duration = pwm0_on_duration_hours*self._MILLISECONDS_PER_HOUR
         pwm0_period_days = pwm0_period_hours/self._HOURS_PER_DAY
         count = duration_days/pwm0_period_days
         delay = self._start_datetime_to_delay(start_datetime)
@@ -403,6 +346,7 @@ class SleepAssay(object):
         self._print_datetime(start_datetime)
         duration_days = config['duration_days']
 
+        # white light
         relay = self._config['relays']['white_light']
         power = config['white_light']['power']
         pwm0_on_duration_hours = config['white_light']['pwm0_on_duration_hours']
@@ -411,10 +355,65 @@ class SleepAssay(object):
         pwm0_on_duration = pwm0_on_duration_hours*self._MILLISECONDS_PER_HOUR
         pwm1_on_duration_days = config['white_light']['pwm1_on_duration_days']
         pwm1_off_duration_days = config['white_light']['pwm1_off_duration_days']
-        pwm1_period = (pwm1_on_duration_days + pwm1_off_duration_days)*self._MILLISECONDS_PER_DAY
-        pwm1_on_duration = pwm1_on_duration_days*self._MILLISECONDS_PER_DAY
         pwm1_period_days = pwm1_on_duration_days + pwm1_off_duration_days
+        pwm1_period = pwm1_period_days*self._MILLISECONDS_PER_DAY
+        pwm1_on_duration = pwm1_on_duration_days*self._MILLISECONDS_PER_DAY
         count = duration_days/pwm1_period_days
+        delay = self._start_datetime_to_delay(start_datetime)
+        self._start_pwm(relay,
+                        power,
+                        delay,
+                        count,
+                        2,
+                        [pwm0_period,pwm1_period],
+                        [pwm0_on_duration,pwm1_on_duration])
+
+        # red light
+        relay = self._config['relays']['red_light']
+        pwm0_frequency = config['red_light']['pwm0_frequency_hz']
+        pwm0_duty_cycle = config['red_light']['pwm0_duty_cycle_percent']
+        pwm0_period = 1000/pwm0_frequency
+        pwm0_on_duration = (pwm0_duty_cycle/100)*pwm0_period
+        pwm1_on_duration_hours = config['red_light']['pwm1_on_duration_hours']
+        pwm1_off_duration_hours = config['red_light']['pwm1_off_duration_hours']
+        pwm1_period_hours = pwm1_on_duration_hours + pwm1_off_duration_hours
+        pwm1_period = pwm1_period_hours*self._MILLISECONDS_PER_HOUR
+        pwm1_on_duration = pwm1_on_duration_hours*self._MILLISECONDS_PER_HOUR
+        pwm1_period_days = pwm1_period_hours/self._HOURS_PER_DAY
+        delay_days = config['red_light']['delay_days']
+        count = math.ceil((duration_days - delay_days)/pwm1_period_days)
+        duration_datetime = self._duration_days_to_duration_datetime(delay_days)
+        red_start_datetime = start_datetime + duration_datetime
+        delay = self._start_datetime_to_delay(red_start_datetime)
+        power = 255
+        self._start_pwm(relay,
+                        power,
+                        delay,
+                        count,
+                        2,
+                        [pwm0_period,pwm1_period],
+                        [pwm0_on_duration,pwm1_on_duration])
+
+        duration_datetime = self._duration_days_to_duration_datetime(duration_days)
+        end_datetime = start_datetime + duration_datetime
+        print('  end:')
+        self._print_datetime(end_datetime)
+        return end_datetime
+
+    def start_recovery(self,start_datetime,config):
+        print('recovery:')
+        print('  start:')
+        self._print_datetime(start_datetime)
+        duration_days = config['duration_days']
+        relay = self._config['relays']['white_light']
+        power = config['white_light']['power']
+        pwm0_on_duration_hours = config['white_light']['pwm0_on_duration_hours']
+        pwm0_off_duration_hours = config['white_light']['pwm0_off_duration_hours']
+        pwm0_period_hours = pwm0_on_duration_hours + pwm0_off_duration_hours
+        pwm0_period = pwm0_period_hours*self._MILLISECONDS_PER_HOUR
+        pwm0_on_duration = pwm0_on_duration_hours*self._MILLISECONDS_PER_HOUR
+        pwm0_period_days = pwm0_period_hours/self._HOURS_PER_DAY
+        count = duration_days/pwm0_period_days
         delay = self._start_datetime_to_delay(start_datetime)
         self._start_pwm(relay,
                         power,
@@ -423,7 +422,6 @@ class SleepAssay(object):
                         1,
                         [pwm0_period],
                         [pwm0_on_duration])
-
         duration_datetime = self._duration_days_to_duration_datetime(duration_days)
         end_datetime = start_datetime + duration_datetime
         print('  end:')
@@ -431,26 +429,141 @@ class SleepAssay(object):
         return end_datetime
 
     def _write_data(self):
-        row = []
+        time_start = time.time()
         power = self._get_power()
         pwm_status = self._get_pwm_status()
         camera_trigger_on = pwm_status[self._config['relays']['camera_trigger']][1]
         white_light_pwm_status = pwm_status[self._config['relays']['white_light']][0:3]
         white_light_power = power[self._config['relays']['white_light']]
-        red_light_pwm_status = pwm_status[self._config['relays']['red_light']][0:3]
+        red_light_pwm_status = pwm_status[self._config['relays']['red_light']][1]
         if camera_trigger_on:
             self._video_frame += 1
-            row.append(self._video_frame)
             date_time = self._get_date_time_str()
-            row.append(date_time)
-            row.append(self._state)
-            row.append(white_light_pwm_status)
-            row.append(white_light_power)
-            row.append(red_light_pwm_status)
-            self._writerow(row)
-        time.sleep(1/self._config['camera_trigger']['frame_rate_hz'])
+            if ((self._white_light_power_prev != white_light_power) or
+                (self._red_light_pwm_status_prev != red_light_pwm_status) or
+                (self._state_prev != self._state)):
+                if ((not self._prev_written) and
+                    (self._white_light_power_prev is not None) and
+                    (self._red_light_pwm_status_prev is not None) and
+                    (self._date_time_prev is not None)):
+                    row = []
+                    row.append(self._video_frame - 1)
+                    row.append(self._date_time_prev)
+                    row.append(self._state_prev)
+                    row.append(self._white_light_power_prev)
+                    row.append(self._red_light_pwm_status_prev)
+                    self._writerow(row)
+                row = []
+                row.append(self._video_frame)
+                row.append(date_time)
+                row.append(self._state)
+                row.append(white_light_power)
+                row.append(red_light_pwm_status)
+                self._writerow(row)
+                self._prev_written = True
+            else:
+                self._prev_written = False
+            self._white_light_power_prev = white_light_power
+            self._red_light_pwm_status_prev = red_light_pwm_status
+            self._state_prev = self._state
+            self._date_time_prev = date_time
 
-    def start(self):
+        time_stop = time.time()
+        time_sleep = 1/self._config['camera_trigger']['frame_rate_hz'] - (time_stop - time_start)
+        if time_sleep > 0:
+            time.sleep(time_sleep)
+
+    def plot_data(self,data_file_path):
+        fig = plt.figure()
+        filename = os.path.split(data_file_path)[1]
+        fig.suptitle(filename, fontsize=14, fontweight='bold')
+        self._data_file_path = os.path.abspath(data_file_path)
+        with open(self._data_file_path,'r') as fid:
+            header = fid.readline().rstrip().split(',')
+
+        dt = np.dtype({'names':header,'formats':['S25']*len(header)})
+        self._numpy_data = np.loadtxt(self._data_file_path,dtype=dt,delimiter=",",skiprows=1)
+
+        scale_factor = 1000/(self._config['camera_trigger']['frame_rate_hz']*self._MILLISECONDS_PER_DAY)
+        t = np.uint32(self._numpy_data['video_frame'])*scale_factor
+
+        # white light
+        power = np.uint8(self._numpy_data['white_light_power'])
+        y_max = 255
+        plt.subplot(2, 1, 1)
+        plt.plot(t, power)
+        plt.ylim(-0.1, y_max+45)
+        plt.ylabel('white light power')
+        plt.xlabel('days')
+        duration_days = int(t.max())
+        plt.xticks(np.linspace(0, duration_days+1, 2*duration_days+3, endpoint=True))
+        plt.grid(True)
+        marker_half_thickness = 0.025
+        start = 0
+        stop = self._config['entrainment']['duration_days'] - marker_half_thickness
+        plt.axvspan(start, stop, color='y', alpha=0.5, lw=0)
+        plt.text(start + (stop-start)/2, y_max+25, 'entrainment', fontsize=15, horizontalalignment='center')
+        start = stop
+        stop = start + 2*marker_half_thickness
+        plt.axvspan(start, stop, color='k', alpha=0.5, lw=0)
+        run = 0
+        for run_config in self._config['experiment']:
+            start = stop
+            stop = start + run_config['duration_days'] - 2*marker_half_thickness
+            plt.axvspan(start, stop, color='g', alpha=0.5, lw=0)
+            plt.text(start + (stop-start)/2, y_max+25, 'experiment run {0}'.format(run), fontsize=15, horizontalalignment='center')
+            start = stop
+            stop = start + 2*marker_half_thickness
+            plt.axvspan(start, stop, color='k', alpha=0.5, lw=0)
+            run += 1
+        start = stop
+        stop = start + self._config['recovery']['duration_days'] - marker_half_thickness
+        plt.axvspan(start, stop, color='r', alpha=0.5, lw=0)
+        plt.text(start + (stop-start)/2, y_max+25, 'recovery', fontsize=15, horizontalalignment='center')
+        start = stop
+        stop = start + marker_half_thickness
+        plt.axvspan(start, stop, color='k', alpha=0.5, lw=0)
+
+        # red light
+        red_light_pwm_status = np.uint8(self._numpy_data['red_light_pwm_status'])
+        y_max = 1
+        plt.subplot(2, 1, 2)
+        plt.plot(t, red_light_pwm_status)
+        plt.ylim(-0.1, y_max+0.25)
+        plt.ylabel('red light pwm status')
+        plt.xlabel('days')
+        duration_days = int(t.max())
+        plt.xticks(np.linspace(0, duration_days+1, 2*duration_days+3, endpoint=True))
+        plt.grid(True)
+        marker_half_thickness = 0.025
+        start = 0
+        stop = self._config['entrainment']['duration_days'] - marker_half_thickness
+        plt.axvspan(start, stop, color='y', alpha=0.5, lw=0)
+        plt.text(start + (stop-start)/2, y_max+0.1, 'entrainment', fontsize=15, horizontalalignment='center')
+        start = stop
+        stop = start + 2*marker_half_thickness
+        plt.axvspan(start, stop, color='k', alpha=0.5, lw=0)
+        run = 0
+        for run_config in self._config['experiment']:
+            start = stop
+            stop = start + run_config['duration_days'] - 2*marker_half_thickness
+            plt.axvspan(start, stop, color='g', alpha=0.5, lw=0)
+            plt.text(start + (stop-start)/2, y_max+0.1, 'experiment run {0}'.format(run), fontsize=15, horizontalalignment='center')
+            start = stop
+            stop = start + 2*marker_half_thickness
+            plt.axvspan(start, stop, color='k', alpha=0.5, lw=0)
+            run += 1
+        start = stop
+        stop = start + self._config['recovery']['duration_days'] - marker_half_thickness
+        plt.axvspan(start, stop, color='r', alpha=0.5, lw=0)
+        plt.text(start + (stop-start)/2, y_max+25, 'recovery', fontsize=15, horizontalalignment='center')
+        start = stop
+        stop = start + marker_half_thickness
+        plt.axvspan(start, stop, color='k', alpha=0.5, lw=0)
+
+        plt.show()
+
+    def run(self):
         self.stop()
         print('config_file_path:')
         print(self._config_file_path)
@@ -467,11 +580,16 @@ class SleepAssay(object):
         self._state = 'entrainment'
         entrainment_end_datetime = self.start_entrainment(entrainment_start_datetime,
                                                           self._config['entrainment'])
+        self._white_light_power_prev = None
+        self._red_light_pwm_status_prev = None
+        self._state_prev = None
+        self._prev_written = False
+        self._date_time_prev = None
         while(datetime.datetime.now() < entrainment_end_datetime):
             self._write_data()
 
         run_start_datetime = entrainment_end_datetime
-        for run in range(len(self._config['experiment'])
+        for run in range(len(self._config['experiment'])):
             self._state = 'experiment_run{0}'.format(run)
             run_end_datetime = self.start_experiment_run(run,
                                                          run_start_datetime,
@@ -479,63 +597,13 @@ class SleepAssay(object):
             while(datetime.datetime.now() < run_end_datetime):
                 self._write_data()
             run_start_datetime = run_end_datetime
-        # self.start_white_light_cycle(self._config['white_light']['relay'],
-        #                              self._config['white_light']['power'],
-        #                              self._config['white_light']['pwm0_on_duration_hours'],
-        #                              self._config['white_light']['pwm0_off_duration_hours'],
-        #                              self._config['white_light']['pwm1_on_duration_days'],
-        #                              self._config['white_light']['pwm1_off_duration_days'],
-        #                              self._config['white_light']['start'])
-        # self.start_red_light_cycle(self._config['red_light']['relay'],
-        #                            self._config['red_light']['pwm0_frequency_hz'],
-        #                            self._config['red_light']['pwm0_duty_cycle_percent'],
-        #                            self._config['red_light']['pwm1_on_duration_hours'],
-        #                            self._config['red_light']['pwm1_off_duration_hours'],
-        #                            self._config['red_light']['pwm2_on_duration_days'],
-        #                            self._config['red_light']['pwm2_off_duration_days'],
-        #                            self._config['red_light']['start'])
-        # print('experiment_start:')
-        # print('{0}-{1}-{2}-{3}-{4}-{5}'.format(experiment_start_datetime.year,
-        #                                        experiment_start_datetime.month,
-        #                                        experiment_start_datetime.day,
-        #                                        experiment_start_datetime.hour,
-        #                                        experiment_start_datetime.minute,
-        #                                        experiment_start_datetime.second))
-        # experiment_duration = datetime.timedelta(self._config['experiment_duration_days'])
-        # experiment_end_datetime = experiment_start_datetime + experiment_duration
-        # print('experiment_end:')
-        # print('{0}-{1}-{2}-{3}-{4}-{5}'.format(experiment_end_datetime.year,
-        #                                        experiment_end_datetime.month,
-        #                                        experiment_end_datetime.day,
-        #                                        experiment_end_datetime.hour,
-        #                                        experiment_end_datetime.minute,
-        #                                        experiment_end_datetime.second))
-        # row_n = 0
-        # video_frame = -1
-        # while(datetime.datetime.now() < experiment_end_datetime):
-        #     row = []
-        #     row.append(row_n)
-        #     time.sleep(1/self._config['camera_trigger']['frame_rate_hz'])
-        #     power = self._get_power()
-        #     pwm_status = self._get_pwm_status()
-        #     camera_trigger_on = pwm_status[self._config['camera_trigger']['relay']][1]
-        #     white_light_pwm_status = pwm_status[self._config['white_light']['relay']][0:3]
-        #     white_light_power = power[self._config['white_light']['relay']]
-        #     red_light_pwm_status = pwm_status[self._config['red_light']['relay']][0:4]
-        #     if camera_trigger_on:
-        #         video_frame += 1
-        #     row.append(video_frame)
-        #     date_time = self._get_date_time_str()
-        #     row.append(date_time)
-        #     row.append(camera_trigger_on)
-        #     row.append(white_light_pwm_status)
-        #     row.append(white_light_power)
-        #     row.append(red_light_pwm_status)
-        #     self._writerow(row)
-        #     row_n += 1
-        #     # print("camera_trigger =  {0}".format(pwm_status[camera_trigger_relay]))
-        #     # print("white light =  {0}".format(power[white_light_relay]))
-        #     # print("red_light =  {0}".format(pwm_status[red_light_relay]))
+
+        self._state = 'recovery'
+        recovery_start_datetime = run_end_datetime
+        recovery_end_datetime = self.start_recovery(recovery_start_datetime,
+                                                    self._config['recovery'])
+        while(datetime.datetime.now() < recovery_end_datetime):
+            self._write_data()
 
 
 def main(args=None):
@@ -543,12 +611,16 @@ def main(args=None):
         args = sys.argv[1:]
     parser = argparse.ArgumentParser()
     parser.add_argument("config_file_path", help="Path to yaml config file.")
+    parser.add_argument('-p',"--plot-data", help="Path to csv data file.")
 
     args = parser.parse_args()
     config_file_path = args.config_file_path
 
     sa = SleepAssay(config_file_path)
-    sa.start()
+    if args.plot_data:
+        sa.plot_data(args.plot_data)
+    else:
+        sa.run()
 
 
 # -----------------------------------------------------------------------------------------

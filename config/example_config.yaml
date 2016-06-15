@@ -31,6 +31,8 @@ experiment:
     pwm0_duty_cycle_percent: 50
     pwm1_on_duration_hours: 12
     pwm1_off_duration_hours: 12
+    # pwm1_on_duration_hours: 6
+    # pwm1_off_duration_hours: 18
     delay_days: 3
   duration_days: 4
 - white_light:
@@ -45,6 +47,9 @@ experiment:
     pwm1_on_duration_hours: 12
     pwm1_off_duration_hours: 12
     delay_days: 3.5
+    # pwm1_on_duration_hours: 18
+    # pwm1_off_duration_hours: 6
+    # delay_days: 3.25
   duration_days: 4
 recovery:
   white_light:
