@@ -556,7 +556,7 @@ class SleepAssay(object):
         start = stop
         stop = start + self._config['recovery']['duration_days'] - marker_half_thickness
         plt.axvspan(start, stop, color='r', alpha=0.5, lw=0)
-        plt.text(start + (stop-start)/2, y_max+25, 'recovery', fontsize=15, horizontalalignment='center')
+        plt.text(start + (stop-start)/2, y_max+0.1, 'recovery', fontsize=15, horizontalalignment='center')
         start = stop
         stop = start + marker_half_thickness
         plt.axvspan(start, stop, color='k', alpha=0.5, lw=0)
