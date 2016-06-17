@@ -18,41 +18,40 @@ import math
 from serial_device2 import SerialDevice, SerialDevices, find_serial_device_ports, WriteFrequencyError
 
 DEBUG = False
-QUICK_TEST = False
 BAUDRATE = 9600
 
 
 class SleepAssay(object):
     '''
     '''
-    _TIMEOUT = 0.05
-    _WRITE_WRITE_DELAY = 0.05
-    _RESET_DELAY = 2.0
-    _RELAY_COUNT = 8
-    _CAMERA_TRIGGER_DUTY_CYCLE = 50
-    _BOARD_INDICATOR_LIGHT_FREQUENCY = 2
-    _BOARD_INDICATOR_LIGHT_DUTY_CYCLE = 50
-    if not QUICK_TEST:
-        _MILLISECONDS_PER_SECOND = 1000
-    else:
-        _MILLISECONDS_PER_SECOND = 1000/3600
-    _SECONDS_PER_MINUTE = 60
-    _MINUTES_PER_HOUR = 60
-    _HOURS_PER_DAY = 24
-    _MILLISECONDS_PER_HOUR = _MILLISECONDS_PER_SECOND*_SECONDS_PER_MINUTE*_MINUTES_PER_HOUR
-    _MILLISECONDS_PER_DAY = _MILLISECONDS_PER_HOUR*_HOURS_PER_DAY
+    def __init__(self,config_file_path,quick_test=False,*args,**kwargs):
+        self._TIMEOUT = 0.05
+        self._WRITE_WRITE_DELAY = 0.05
+        self._RESET_DELAY = 2.0
+        self._RELAY_COUNT = 8
+        self._CAMERA_TRIGGER_DUTY_CYCLE = 50
+        self._BOARD_INDICATOR_LIGHT_FREQUENCY = 2
+        self._BOARD_INDICATOR_LIGHT_DUTY_CYCLE = 50
+        if not quick_test:
+            self._MILLISECONDS_PER_SECOND = 1000
+        else:
+            self._MILLISECONDS_PER_SECOND = 1000/3600
+        self._SECONDS_PER_MINUTE = 60
+        self._MINUTES_PER_HOUR = 60
+        self._HOURS_PER_DAY = 24
+        self._MILLISECONDS_PER_HOUR = self._MILLISECONDS_PER_SECOND*self._SECONDS_PER_MINUTE*self._MINUTES_PER_HOUR
+        self._MILLISECONDS_PER_DAY = self._MILLISECONDS_PER_HOUR*self._HOURS_PER_DAY
 
-    _METHOD_ID_START_PWM = 0
-    _METHOD_ID_STOP_ALL_PULSES = 1
-    _METHOD_ID_GET_POWER = 2
-    _METHOD_ID_GET_PWM_STATUS = 3
+        self._METHOD_ID_START_PWM = 0
+        self._METHOD_ID_STOP_ALL_PULSES = 1
+        self._METHOD_ID_GET_POWER = 2
+        self._METHOD_ID_GET_PWM_STATUS = 3
 
-    _PWM_STOPPED = 0
-    _PWM_RUNNING = 1
+        self._PWM_STOPPED = 0
+        self._PWM_RUNNING = 1
 
-    _POWER_MAX = 255
+        self._POWER_MAX = 255
 
-    def __init__(self,config_file_path,*args,**kwargs):
         self._config_file_path = os.path.abspath(config_file_path)
         if 'debug' in kwargs:
             self.debug = kwargs['debug']
@@ -89,6 +88,7 @@ class SleepAssay(object):
         self._serial_device = SerialDevice(*args,**kwargs)
         atexit.register(self._exit_sleep_assay)
         time.sleep(self._RESET_DELAY)
+        self._csv_file_path = None
         self._csv_file = None
         self._csv_writer = None
         self._video_frame = -1
@@ -296,14 +296,14 @@ class SleepAssay(object):
             if not os.path.exists(output_dir):
                 os.makedirs(output_dir)
             date_time_str = self._get_date_time_str()
-            output_path = os.path.join(output_dir,date_time_str + '-data.txt')
+            self._csv_file_path = os.path.join(output_dir,date_time_str + '-data.txt')
 
-            self._csv_file = open(output_path, 'w')
+            self._csv_file = open(self._csv_file_path, 'w')
 
             # Create a new csv writer object to use as the output formatter
             self._csv_writer = csv.writer(self._csv_file,quotechar='\"',quoting=csv.QUOTE_MINIMAL)
             self._writerow(self._header)
-            return output_path
+            return self._csv_file_path
 
     def stop(self):
         self._stop_all_pulses()
@@ -347,52 +347,72 @@ class SleepAssay(object):
         duration_days = config['duration_days']
 
         # white light
-        relay = self._config['relays']['white_light']
-        power = config['white_light']['power']
-        pwm0_on_duration_hours = config['white_light']['pwm0_on_duration_hours']
-        pwm0_off_duration_hours = config['white_light']['pwm0_off_duration_hours']
-        pwm0_period = (pwm0_on_duration_hours + pwm0_off_duration_hours)*self._MILLISECONDS_PER_HOUR
-        pwm0_on_duration = pwm0_on_duration_hours*self._MILLISECONDS_PER_HOUR
-        pwm1_on_duration_days = config['white_light']['pwm1_on_duration_days']
-        pwm1_off_duration_days = config['white_light']['pwm1_off_duration_days']
-        pwm1_period_days = pwm1_on_duration_days + pwm1_off_duration_days
-        pwm1_period = pwm1_period_days*self._MILLISECONDS_PER_DAY
-        pwm1_on_duration = pwm1_on_duration_days*self._MILLISECONDS_PER_DAY
-        count = duration_days/pwm1_period_days
-        delay = self._start_datetime_to_delay(start_datetime)
-        self._start_pwm(relay,
-                        power,
-                        delay,
-                        count,
-                        2,
-                        [pwm0_period,pwm1_period],
-                        [pwm0_on_duration,pwm1_on_duration])
+        if 'white_light' in config:
+            relay = self._config['relays']['white_light']
+            power = config['white_light']['power']
+            pwm0_on_duration_hours = config['white_light']['pwm0_on_duration_hours']
+            pwm0_off_duration_hours = config['white_light']['pwm0_off_duration_hours']
+            pwm0_period = (pwm0_on_duration_hours + pwm0_off_duration_hours)*self._MILLISECONDS_PER_HOUR
+            pwm0_on_duration = pwm0_on_duration_hours*self._MILLISECONDS_PER_HOUR
+            delay_days = 0
+            if 'delay_days' in config['white_light']:
+                delay_days = config['white_light']['delay_days']
+            duration_datetime = self._duration_days_to_duration_datetime(delay_days)
+            white_start_datetime = start_datetime + duration_datetime
+            delay = self._start_datetime_to_delay(white_start_datetime)
+            if ('pwm1_on_duration_days' in config['white_light']) and ('pwm1_off_duration_days' in config['white_light']):
+                pwm1_on_duration_days = config['white_light']['pwm1_on_duration_days']
+                pwm1_off_duration_days = config['white_light']['pwm1_off_duration_days']
+                pwm1_period_days = pwm1_on_duration_days + pwm1_off_duration_days
+                pwm1_period = pwm1_period_days*self._MILLISECONDS_PER_DAY
+                pwm1_on_duration = pwm1_on_duration_days*self._MILLISECONDS_PER_DAY
+                count = math.ceil((duration_days - delay_days)/pwm1_period_days)
+                self._start_pwm(relay,
+                                power,
+                                delay,
+                                count,
+                                2,
+                                [pwm0_period,pwm1_period],
+                                [pwm0_on_duration,pwm1_on_duration])
+            else:
+                pwm0_period_days = (pwm0_on_duration_hours + pwm0_off_duration_hours)/self._HOURS_PER_DAY
+                count = math.ceil((duration_days - delay_days)/pwm0_period_days)
+                self._start_pwm(relay,
+                                power,
+                                delay,
+                                count,
+                                1,
+                                [pwm0_period],
+                                [pwm0_on_duration])
 
         # red light
-        relay = self._config['relays']['red_light']
-        pwm0_frequency = config['red_light']['pwm0_frequency_hz']
-        pwm0_duty_cycle = config['red_light']['pwm0_duty_cycle_percent']
-        pwm0_period = 1000/pwm0_frequency
-        pwm0_on_duration = (pwm0_duty_cycle/100)*pwm0_period
-        pwm1_on_duration_hours = config['red_light']['pwm1_on_duration_hours']
-        pwm1_off_duration_hours = config['red_light']['pwm1_off_duration_hours']
-        pwm1_period_hours = pwm1_on_duration_hours + pwm1_off_duration_hours
-        pwm1_period = pwm1_period_hours*self._MILLISECONDS_PER_HOUR
-        pwm1_on_duration = pwm1_on_duration_hours*self._MILLISECONDS_PER_HOUR
-        pwm1_period_days = pwm1_period_hours/self._HOURS_PER_DAY
-        delay_days = config['red_light']['delay_days']
-        count = math.ceil((duration_days - delay_days)/pwm1_period_days)
-        duration_datetime = self._duration_days_to_duration_datetime(delay_days)
-        red_start_datetime = start_datetime + duration_datetime
-        delay = self._start_datetime_to_delay(red_start_datetime)
-        power = 255
-        self._start_pwm(relay,
-                        power,
-                        delay,
-                        count,
-                        2,
-                        [pwm0_period,pwm1_period],
-                        [pwm0_on_duration,pwm1_on_duration])
+        if 'red_light' in config:
+            relay = self._config['relays']['red_light']
+            pwm0_frequency = config['red_light']['pwm0_frequency_hz']
+            pwm0_duty_cycle = config['red_light']['pwm0_duty_cycle_percent']
+            pwm0_period = 1000/pwm0_frequency
+            pwm0_on_duration = (pwm0_duty_cycle/100)*pwm0_period
+            pwm1_on_duration_hours = config['red_light']['pwm1_on_duration_hours']
+            pwm1_off_duration_hours = config['red_light']['pwm1_off_duration_hours']
+            pwm1_period_hours = pwm1_on_duration_hours + pwm1_off_duration_hours
+            pwm1_period = pwm1_period_hours*self._MILLISECONDS_PER_HOUR
+            pwm1_on_duration = pwm1_on_duration_hours*self._MILLISECONDS_PER_HOUR
+            pwm1_period_days = pwm1_period_hours/self._HOURS_PER_DAY
+            delay_days = 0
+            if 'delay_days' in config['red_light']:
+                delay_days = config['red_light']['delay_days']
+            count = math.ceil((duration_days - delay_days)/pwm1_period_days)
+            duration_datetime = self._duration_days_to_duration_datetime(delay_days)
+            red_start_datetime = start_datetime + duration_datetime
+            delay = self._start_datetime_to_delay(red_start_datetime)
+            power = 255
+            self._start_pwm(relay,
+                            power,
+                            delay,
+                            count,
+                            2,
+                            [pwm0_period,pwm1_period],
+                            [pwm0_on_duration,pwm1_on_duration])
 
         duration_datetime = self._duration_days_to_duration_datetime(duration_days)
         end_datetime = start_datetime + duration_datetime
@@ -474,6 +494,7 @@ class SleepAssay(object):
             time.sleep(time_sleep)
 
     def plot_data(self,data_file_path):
+        print('data_file_path: {0}'.format(data_file_path))
         fig = plt.figure()
         filename = os.path.split(data_file_path)[1]
         fig.suptitle(filename, fontsize=14, fontweight='bold')
@@ -605,6 +626,9 @@ class SleepAssay(object):
         while(datetime.datetime.now() < recovery_end_datetime):
             self._write_data()
 
+        self._csv_file.close()
+        self.plot_data(self._csv_file_path)
+
 
 def main(args=None):
     if args is None:
@@ -612,11 +636,12 @@ def main(args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("config_file_path", help="Path to yaml config file.")
     parser.add_argument('-p',"--plot-data", help="Path to csv data file.")
+    parser.add_argument('-q',"--quick-test", help="Quick test.", action="store_true")
 
     args = parser.parse_args()
     config_file_path = args.config_file_path
 
-    sa = SleepAssay(config_file_path)
+    sa = SleepAssay(config_file_path,args.quick_test)
     if args.plot_data:
         sa.plot_data(args.plot_data)
     else:

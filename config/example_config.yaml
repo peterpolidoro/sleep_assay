@@ -24,33 +24,47 @@ experiment:
     power: 100 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
     pwm0_on_duration_hours: 12
     pwm0_off_duration_hours: 12
-    pwm1_on_duration_days: 3
-    pwm1_off_duration_days: 1
-  red_light:
-    pwm0_frequency_hz: 10
-    pwm0_duty_cycle_percent: 50
-    pwm1_on_duration_hours: 12
-    pwm1_off_duration_hours: 12
-    # pwm1_on_duration_hours: 6
-    # pwm1_off_duration_hours: 18
-    delay_days: 3
-  duration_days: 4
+  duration_days: 3
 - white_light:
     power: 100 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
     pwm0_on_duration_hours: 12
     pwm0_off_duration_hours: 12
-    pwm1_on_duration_days: 3
-    pwm1_off_duration_days: 1
   red_light:
     pwm0_frequency_hz: 10
     pwm0_duty_cycle_percent: 50
     pwm1_on_duration_hours: 12
     pwm1_off_duration_hours: 12
-    delay_days: 3.5
-    # pwm1_on_duration_hours: 18
-    # pwm1_off_duration_hours: 6
-    # delay_days: 3.25
-  duration_days: 4
+    delay_days: 0.5
+  duration_days: 1
+- white_light:
+    power: 100 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
+    pwm0_on_duration_hours: 12
+    pwm0_off_duration_hours: 12
+  duration_days: 3
+- white_light:
+    power: 100 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
+    pwm0_on_duration_hours: 12
+    pwm0_off_duration_hours: 12
+    delay_days: 0.5
+  red_light:
+    pwm0_frequency_hz: 10
+    pwm0_duty_cycle_percent: 50
+    pwm1_on_duration_hours: 12
+    pwm1_off_duration_hours: 12
+  duration_days: 1
+# - white_light:
+#     power: 100 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
+#     pwm0_on_duration_hours: 12
+#     pwm0_off_duration_hours: 12
+#     pwm1_on_duration_days: 3
+#     pwm1_off_duration_days: 1
+#   red_light:
+#     pwm0_frequency_hz: 10
+#     pwm0_duty_cycle_percent: 50
+#     pwm1_on_duration_hours: 12
+#     pwm1_off_duration_hours: 12
+#     delay_days: 3.5
+#   duration_days: 4
 recovery:
   white_light:
     power: 100 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
