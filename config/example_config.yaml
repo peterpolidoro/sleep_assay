@@ -8,8 +8,8 @@ relays:
   red_light: 2
   board_indicator_light: 7
 start:
-  offset_days: -1 # -1 <= offset_days <= 10, -1 is start immediately, 0 is today, 1 is tomorrow, etc.
-  hour: 16 # 0 <= hour < 24, 9 is 9AM, 16 is 4PM, etc.
+  offset_days: 1 # -1 <= offset_days <= 10, -1 is start immediately, 0 is today, 1 is tomorrow, etc.
+  hour: 9 # 0 <= hour < 24, 9 is 9AM, 16 is 4PM, etc.
   minute: 0 # 0 <= minute < 60, hour = 9 and minute = 0 is 9:00AM, hour = 16 and minute = 30 is 4:30PM, etc.
 camera_trigger:
   frame_rate_hz: 0.5
