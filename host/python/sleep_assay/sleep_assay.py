@@ -149,8 +149,8 @@ class SleepAssay(object):
                 self._debug_print('response', response)
                 result = json.loads(response)
                 successful = True
-            except ValueError:
-                print('ValueError!','\nrequest:',request,'\nresponse:',response)
+            except:
+                print('Error!','\nrequest:',request,'\nresponse:',response)
                 time.sleep(0.5)
         return result
 
