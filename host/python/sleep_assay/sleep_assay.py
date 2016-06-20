@@ -142,9 +142,16 @@ class SleepAssay(object):
         '''
         request = self._args_to_request(*args)
         self._debug_print('request', request)
-        response = self._serial_device.write_read(request,use_readline=True,check_write_freq=False)
-        self._debug_print('response', response)
-        result = json.loads(response)
+        successful = False
+        while not successful:
+            try:
+                response = self._serial_device.write_read(request,use_readline=True,check_write_freq=False)
+                self._debug_print('response', response)
+                result = json.loads(response)
+                successful = True
+            except ValueError:
+                print('ValueError!','\nrequest:',request,'\nresponse:',response)
+                time.sleep(0.5)
         return result
 
     def _close(self):
