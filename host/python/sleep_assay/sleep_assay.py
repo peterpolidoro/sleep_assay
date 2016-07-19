@@ -24,7 +24,7 @@ BAUDRATE = 9600
 class SleepAssay(object):
     '''
     '''
-    def __init__(self,config_file_path,quick_test=False,*args,**kwargs):
+    def __init__(self,config_file_path,quick_test=False,no_hardware=False,*args,**kwargs):
         self._TIMEOUT = 0.05
         self._WRITE_WRITE_DELAY = 0.05
         self._RESET_DELAY = 2.0
@@ -86,7 +86,9 @@ class SleepAssay(object):
             except KeyError:
                 raise RuntimeError('Must specify osx serial port in config file!')
         t_start = time.time()
-        self._serial_device = SerialDevice(*args,**kwargs)
+        self._no_hardware = no_hardware
+        if not self._no_hardware:
+            self._serial_device = SerialDevice(*args,**kwargs)
         atexit.register(self._exit_sleep_assay)
         time.sleep(self._RESET_DELAY)
         self._csv_file_path = None
@@ -132,8 +134,10 @@ class SleepAssay(object):
 
         request = self._args_to_request(*args)
         self._debug_print('request', request)
-        bytes_written = self._serial_device.write_check_freq(request,
-                                                             delay_write=True)
+        bytes_written = 0
+        if not self._no_hardware:
+            bytes_written = self._serial_device.write_check_freq(request,
+                                                                 delay_write=True)
         return bytes_written
 
     def _send_request_get_result(self,*args):
@@ -144,7 +148,8 @@ class SleepAssay(object):
         request = self._args_to_request(*args)
         self._debug_print('request', request)
         successful = False
-        while not successful:
+        result = None
+        while (not successful) and (not self._no_hardware):
             try:
                 response = self._serial_device.write_read(request,use_readline=True,check_write_freq=False)
                 self._debug_print('response', response)
@@ -159,10 +164,14 @@ class SleepAssay(object):
         '''
         Close the device serial port.
         '''
-        self._serial_device.close()
+        if not self._no_hardware:
+            self._serial_device.close()
 
     def _get_port(self):
-        return self._serial_device.port
+        if not self._no_hardware:
+            return self._serial_device.port
+        else:
+            return None
 
     def _start_pwm(self,
                    relay,
@@ -477,6 +486,9 @@ class SleepAssay(object):
         return end_datetime
 
     def _write_data(self):
+        if self._no_hardware:
+            time.sleep(1/self._config['camera_trigger']['frame_rate_hz'])
+            return
         time_start = time.time()
         pwm_status = self._get_pwm_status()
         camera_trigger_on = pwm_status[self._config['relays']['camera_trigger']][1]
@@ -522,6 +534,8 @@ class SleepAssay(object):
             time.sleep(time_sleep)
 
     def plot_data(self,data_file_path):
+        if self._no_hardware:
+            return
         print('data_file_path: {0}'.format(data_file_path))
         fig = plt.figure()
         filename = os.path.split(data_file_path)[1]
@@ -635,6 +649,17 @@ class SleepAssay(object):
         if self._quick_test:
             self._config['start']['offset_days'] = -1
         camera_trigger_start_datetime = self._start_to_start_datetime(self._config['start'])
+
+        entrainment_duration_datetime = self._duration_days_to_duration_datetime(self._config['entrainment']['duration_days'])
+        end_datetime = camera_trigger_start_datetime + entrainment_duration_datetime
+        for run in range(len(self._config['experiment'])):
+            run_duration_datetime = self._duration_days_to_duration_datetime(self._config['experiment'][run]['duration_days'])
+            end_datetime += run_duration_datetime
+        recovery_duration_datetime = self._duration_days_to_duration_datetime(self._config['recovery']['duration_days'])
+        end_datetime += recovery_duration_datetime
+        print('sleep assay will run until:')
+        self._print_datetime(end_datetime)
+
         delay = self._start_datetime_to_delay(camera_trigger_start_datetime)
         self._video_frame = -1
         self.start_camera_trigger(self._config['relays']['camera_trigger'],
@@ -679,11 +704,12 @@ def main(args=None):
     parser.add_argument("config_file_path", help="Path to yaml config file.")
     parser.add_argument('-p',"--plot-data", help="Path to csv data file.")
     parser.add_argument('-q',"--quick-test", help="Quick test.", action="store_true")
+    parser.add_argument('-n',"--no-hardware", help="Run without USB hardware attached.", action="store_true")
 
     args = parser.parse_args()
     config_file_path = args.config_file_path
 
-    sa = SleepAssay(config_file_path,args.quick_test)
+    sa = SleepAssay(config_file_path,args.quick_test,args.no_hardware)
     if args.plot_data:
         sa.plot_data(args.plot_data)
     else:
