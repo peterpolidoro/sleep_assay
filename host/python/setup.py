@@ -70,6 +70,8 @@ setup(
     install_requires=['pyserial',
                       'serial_device2',
                       'pyyaml',
+                      'numpy',
+                      'matplotlib'
     ],
 
     # If there are data files included in your packages that need to be

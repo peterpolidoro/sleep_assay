@@ -32,7 +32,8 @@ class SleepAssay(object):
         self._CAMERA_TRIGGER_DUTY_CYCLE = 50
         self._BOARD_INDICATOR_LIGHT_FREQUENCY = 2
         self._BOARD_INDICATOR_LIGHT_DUTY_CYCLE = 50
-        if not quick_test:
+        self._quick_test = quick_test
+        if not self._quick_test:
             self._MILLISECONDS_PER_SECOND = 1000
         else:
             self._MILLISECONDS_PER_SECOND = 1000/3600
@@ -150,7 +151,7 @@ class SleepAssay(object):
                 result = json.loads(response)
                 successful = True
             except:
-                print('Error!','\nrequest:',request,'\nresponse:',response)
+                print('Error!','\nrequest:',request)
                 time.sleep(0.5)
         return result
 
@@ -324,6 +325,13 @@ class SleepAssay(object):
         print('  start:')
         self._print_datetime(start_datetime)
         duration_days = config['duration_days']
+
+        if duration_days <= 0:
+            end_datetime = start_datetime
+            print('  end:')
+            self._print_datetime(end_datetime)
+            return end_datetime
+
         relay = self._config['relays']['white_light']
         power = config['white_light']['power']
         pwm0_on_duration_hours = config['white_light']['pwm0_on_duration_hours']
@@ -352,6 +360,12 @@ class SleepAssay(object):
         print('  start:')
         self._print_datetime(start_datetime)
         duration_days = config['duration_days']
+
+        if duration_days <= 0:
+            end_datetime = start_datetime
+            print('  end:')
+            self._print_datetime(end_datetime)
+            return end_datetime
 
         # white light
         if 'white_light' in config:
@@ -432,6 +446,13 @@ class SleepAssay(object):
         print('  start:')
         self._print_datetime(start_datetime)
         duration_days = config['duration_days']
+
+        if duration_days <= 0:
+            end_datetime = start_datetime
+            print('  end:')
+            self._print_datetime(end_datetime)
+            return end_datetime
+
         relay = self._config['relays']['white_light']
         power = config['white_light']['power']
         pwm0_on_duration_hours = config['white_light']['pwm0_on_duration_hours']
@@ -457,13 +478,13 @@ class SleepAssay(object):
 
     def _write_data(self):
         time_start = time.time()
-        power = self._get_power()
         pwm_status = self._get_pwm_status()
         camera_trigger_on = pwm_status[self._config['relays']['camera_trigger']][1]
-        white_light_pwm_status = pwm_status[self._config['relays']['white_light']][0:3]
-        white_light_power = power[self._config['relays']['white_light']]
-        red_light_pwm_status = pwm_status[self._config['relays']['red_light']][1]
         if camera_trigger_on:
+            power = self._get_power()
+            white_light_pwm_status = pwm_status[self._config['relays']['white_light']][0:3]
+            white_light_power = power[self._config['relays']['white_light']]
+            red_light_pwm_status = pwm_status[self._config['relays']['red_light']][1]
             self._video_frame += 1
             date_time = self._get_date_time_str()
             if ((self._white_light_power_prev != white_light_power) or
@@ -528,26 +549,32 @@ class SleepAssay(object):
         plt.grid(True)
         marker_half_thickness = 0.025
         start = 0
-        stop = self._config['entrainment']['duration_days'] - marker_half_thickness
-        plt.axvspan(start, stop, color='y', alpha=0.5, lw=0)
-        plt.text(start + (stop-start)/2, y_max+25, 'entrainment', fontsize=15, horizontalalignment='center')
+        entrainment_duration = self._config['entrainment']['duration_days']
+        stop = entrainment_duration - marker_half_thickness
+        if entrainment_duration > 0:
+            plt.axvspan(start, stop, color='y', alpha=0.5, lw=0)
+            plt.text(start + (stop-start)/2, y_max+25, 'entrainment', fontsize=15, horizontalalignment='center')
         start = stop
         stop = start + 2*marker_half_thickness
         plt.axvspan(start, stop, color='k', alpha=0.5, lw=0)
         run = 0
         for run_config in self._config['experiment']:
             start = stop
-            stop = start + run_config['duration_days'] - 2*marker_half_thickness
-            plt.axvspan(start, stop, color='g', alpha=0.5, lw=0)
-            plt.text(start + (stop-start)/2, y_max+25, 'experiment run {0}'.format(run), fontsize=15, horizontalalignment='center')
+            run_duration = run_config['duration_days']
+            stop = start + run_duration - 2*marker_half_thickness
+            if run_duration > 0:
+                plt.axvspan(start, stop, color='g', alpha=0.5, lw=0)
+                plt.text(start + (stop-start)/2, y_max+25, 'experiment run {0}'.format(run), fontsize=15, horizontalalignment='center')
             start = stop
             stop = start + 2*marker_half_thickness
             plt.axvspan(start, stop, color='k', alpha=0.5, lw=0)
             run += 1
         start = stop
-        stop = start + self._config['recovery']['duration_days'] - marker_half_thickness
-        plt.axvspan(start, stop, color='r', alpha=0.5, lw=0)
-        plt.text(start + (stop-start)/2, y_max+25, 'recovery', fontsize=15, horizontalalignment='center')
+        recovery_duration = self._config['recovery']['duration_days']
+        stop = start + recovery_duration - marker_half_thickness
+        if recovery_duration > 0:
+            plt.axvspan(start, stop, color='r', alpha=0.5, lw=0)
+            plt.text(start + (stop-start)/2, y_max+25, 'recovery', fontsize=15, horizontalalignment='center')
         start = stop
         stop = start + marker_half_thickness
         plt.axvspan(start, stop, color='k', alpha=0.5, lw=0)
@@ -565,26 +592,32 @@ class SleepAssay(object):
         plt.grid(True)
         marker_half_thickness = 0.025
         start = 0
-        stop = self._config['entrainment']['duration_days'] - marker_half_thickness
-        plt.axvspan(start, stop, color='y', alpha=0.5, lw=0)
-        plt.text(start + (stop-start)/2, y_max+0.1, 'entrainment', fontsize=15, horizontalalignment='center')
+        entrainment_duration = self._config['entrainment']['duration_days']
+        stop = entrainment_duration - marker_half_thickness
+        if entrainment_duration > 0:
+            plt.axvspan(start, stop, color='y', alpha=0.5, lw=0)
+            plt.text(start + (stop-start)/2, y_max+0.1, 'entrainment', fontsize=15, horizontalalignment='center')
         start = stop
         stop = start + 2*marker_half_thickness
         plt.axvspan(start, stop, color='k', alpha=0.5, lw=0)
         run = 0
         for run_config in self._config['experiment']:
             start = stop
-            stop = start + run_config['duration_days'] - 2*marker_half_thickness
-            plt.axvspan(start, stop, color='g', alpha=0.5, lw=0)
-            plt.text(start + (stop-start)/2, y_max+0.1, 'experiment run {0}'.format(run), fontsize=15, horizontalalignment='center')
+            run_duration = run_config['duration_days']
+            stop = start + run_duration - 2*marker_half_thickness
+            if run_duration > 0:
+                plt.axvspan(start, stop, color='g', alpha=0.5, lw=0)
+                plt.text(start + (stop-start)/2, y_max+0.1, 'experiment run {0}'.format(run), fontsize=15, horizontalalignment='center')
             start = stop
             stop = start + 2*marker_half_thickness
             plt.axvspan(start, stop, color='k', alpha=0.5, lw=0)
             run += 1
         start = stop
-        stop = start + self._config['recovery']['duration_days'] - marker_half_thickness
-        plt.axvspan(start, stop, color='r', alpha=0.5, lw=0)
-        plt.text(start + (stop-start)/2, y_max+0.1, 'recovery', fontsize=15, horizontalalignment='center')
+        recovery_duration = self._config['recovery']['duration_days']
+        stop = start + recovery_duration - marker_half_thickness
+        if recovery_duration > 0:
+            plt.axvspan(start, stop, color='r', alpha=0.5, lw=0)
+            plt.text(start + (stop-start)/2, y_max+0.1, 'recovery', fontsize=15, horizontalalignment='center')
         start = stop
         stop = start + marker_half_thickness
         plt.axvspan(start, stop, color='k', alpha=0.5, lw=0)
@@ -599,14 +632,16 @@ class SleepAssay(object):
         data_file_path = self.start_data_writer()
         print(data_file_path)
         self.start_board_indicator_light_cycle(self._config['relays']['board_indicator_light'])
-        entrainment_start_datetime = self._start_to_start_datetime(self._config['start'])
-        delay = self._start_datetime_to_delay(entrainment_start_datetime)
+        if self._quick_test:
+            self._config['start']['offset_days'] = -1
+        camera_trigger_start_datetime = self._start_to_start_datetime(self._config['start'])
+        delay = self._start_datetime_to_delay(camera_trigger_start_datetime)
         self._video_frame = -1
         self.start_camera_trigger(self._config['relays']['camera_trigger'],
                                   self._config['camera_trigger']['frame_rate_hz'],
                                   delay)
         self._state = 'entrainment'
-        entrainment_end_datetime = self.start_entrainment(entrainment_start_datetime,
+        entrainment_end_datetime = self.start_entrainment(camera_trigger_start_datetime,
                                                           self._config['entrainment'])
         self._white_light_power_prev = None
         self._red_light_pwm_status_prev = None
