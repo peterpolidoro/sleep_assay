@@ -100,7 +100,8 @@ class SleepAssay(object):
                         'date_time',
                         'state',
                         'white_light_power',
-                        'red_light_pwm_status']
+                        'red_light_pwm_status',
+                        'red_light_power']
         t_end = time.time()
         self._debug_print('Initialization time =', (t_end - t_start))
 
@@ -418,6 +419,7 @@ class SleepAssay(object):
         # red light
         if 'red_light' in config:
             relay = self._config['relays']['red_light']
+            power = config['red_light']['power']
             pwm0_frequency = config['red_light']['pwm0_frequency_hz']
             pwm0_duty_cycle = config['red_light']['pwm0_duty_cycle_percent']
             pwm0_period = 1000/pwm0_frequency
@@ -435,7 +437,6 @@ class SleepAssay(object):
             duration_datetime = self._duration_days_to_duration_datetime(delay_days)
             red_start_datetime = start_datetime + duration_datetime
             delay = self._start_datetime_to_delay(red_start_datetime)
-            power = 255
             self._start_pwm(relay,
                             power,
                             delay,
@@ -497,34 +498,40 @@ class SleepAssay(object):
             white_light_pwm_status = pwm_status[self._config['relays']['white_light']][0:3]
             white_light_power = power[self._config['relays']['white_light']]
             red_light_pwm_status = pwm_status[self._config['relays']['red_light']][1]
+            red_light_power = power[self._config['relays']['red_light']]
             self._video_frame += 1
             date_time = self._get_date_time_str()
             if ((self._white_light_power_prev != white_light_power) or
                 (self._red_light_pwm_status_prev != red_light_pwm_status) or
+                (self._red_light_power_prev != red_light_power) or
                 (self._state_prev != self._state)):
-                if ((not self._prev_written) and
-                    (self._white_light_power_prev is not None) and
-                    (self._red_light_pwm_status_prev is not None) and
-                    (self._date_time_prev is not None)):
-                    row = []
-                    row.append(self._video_frame - 1)
-                    row.append(self._date_time_prev)
-                    row.append(self._state_prev)
-                    row.append(self._white_light_power_prev)
-                    row.append(self._red_light_pwm_status_prev)
-                    self._writerow(row)
+                # if ((not self._prev_written) and
+                #     (self._white_light_power_prev is not None) and
+                #     (self._red_light_pwm_status_prev is not None) and
+                #     (self._red_light_power_prev is not None) and
+                #     (self._date_time_prev is not None)):
+                #     row = []
+                #     row.append(self._video_frame - 1)
+                #     row.append(self._date_time_prev)
+                #     row.append(self._state_prev)
+                #     row.append(self._white_light_power_prev)
+                #     row.append(self._red_light_pwm_status_prev)
+                #     row.append(self._red_light_power_prev)
+                #     self._writerow(row)
                 row = []
                 row.append(self._video_frame)
                 row.append(date_time)
                 row.append(self._state)
                 row.append(white_light_power)
                 row.append(red_light_pwm_status)
+                row.append(red_light_power)
                 self._writerow(row)
                 self._prev_written = True
             else:
                 self._prev_written = False
             self._white_light_power_prev = white_light_power
             self._red_light_pwm_status_prev = red_light_pwm_status
+            self._red_light_power_prev = red_light_power
             self._state_prev = self._state
             self._date_time_prev = date_time
 
@@ -554,7 +561,8 @@ class SleepAssay(object):
         power = np.uint8(self._numpy_data['white_light_power'])
         y_max = 255
         plt.subplot(2, 1, 1)
-        plt.plot(t, power)
+        # plt.plot(t, power)
+        plt.step(t, power, where='post')
         plt.ylim(-0.1, y_max+45)
         plt.ylabel('white light power')
         plt.xlabel('days')
@@ -597,7 +605,8 @@ class SleepAssay(object):
         red_light_pwm_status = np.uint8(self._numpy_data['red_light_pwm_status'])
         y_max = 1
         plt.subplot(2, 1, 2)
-        plt.plot(t, red_light_pwm_status)
+        # plt.plot(t, red_light_pwm_status)
+        plt.step(t, red_light_pwm_status, where='post')
         plt.ylim(-0.1, y_max+0.25)
         plt.ylabel('red light pwm status')
         plt.xlabel('days')
@@ -670,6 +679,7 @@ class SleepAssay(object):
                                                           self._config['entrainment'])
         self._white_light_power_prev = None
         self._red_light_pwm_status_prev = None
+        self._red_light_power_prev = None
         self._state_prev = None
         self._prev_written = False
         self._date_time_prev = None
