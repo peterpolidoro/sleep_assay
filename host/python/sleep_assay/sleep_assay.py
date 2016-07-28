@@ -657,7 +657,8 @@ class SleepAssay(object):
         self.start_board_indicator_light_cycle(self._config['relays']['board_indicator_light'])
         if self._quick_test:
             self._config['start']['offset_days'] = -1
-            self._config['camera_trigger']['frame_rate_hz'] *= 10
+            if self._config['camera_trigger']['frame_rate_hz'] <= 1:
+                self._config['camera_trigger']['frame_rate_hz'] *= 10
         camera_trigger_start_datetime = self._start_to_start_datetime(self._config['start'])
 
         entrainment_duration_datetime = self._duration_days_to_duration_datetime(self._config['entrainment']['duration_days'])
@@ -705,6 +706,7 @@ class SleepAssay(object):
             self._write_data()
 
         self._csv_file.close()
+        self._stop_all_pulses()
         self.plot_data(self._csv_file_path)
 
 
