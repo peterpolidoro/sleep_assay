@@ -15,18 +15,18 @@ camera_trigger:
   frame_rate_hz: 0.5
 entrainment:
   white_light:
-    power: 100 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
+    power: 14 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
     pwm0_on_duration_hours: 12
     pwm0_off_duration_hours: 12
-  duration_days: 3
+  duration_days: 2
 experiment:
+#- white_light:
+#    power: 14 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
+#    pwm0_on_duration_hours: 12
+#    pwm0_off_duration_hours: 12
+#  duration_days: 3
 - white_light:
-    power: 100 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
-    pwm0_on_duration_hours: 12
-    pwm0_off_duration_hours: 12
-  duration_days: 3
-- white_light:
-    power: 100 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
+    power: 14 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
     pwm0_on_duration_hours: 12
     pwm0_off_duration_hours: 12
   red_light:
@@ -37,18 +37,23 @@ experiment:
     delay_days: 0.5
   duration_days: 1
 - white_light:
-    power: 100 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
+    power: 14 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
     pwm0_on_duration_hours: 12
     pwm0_off_duration_hours: 12
-  duration_days: 3
-- red_light:
+  duration_days: 2
+- white_light:
+    power: 14 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
+    pwm0_on_duration_hours: 12
+    pwm0_off_duration_hours: 12
+  red_light:
     pwm0_frequency_hz: 10
     pwm0_duty_cycle_percent: 50
     pwm1_on_duration_hours: 12
     pwm1_off_duration_hours: 12
+  delay_days: 0.5
   duration_days: 1
 # - white_light:
-#     power: 100 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
+#     power: 14 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
 #     pwm0_on_duration_hours: 12
 #     pwm0_off_duration_hours: 12
 #     pwm1_on_duration_days: 3
@@ -62,7 +67,7 @@ experiment:
 #   duration_days: 4
 recovery:
   white_light:
-    power: 100 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
+    power: 14 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
     pwm0_on_duration_hours: 12
     pwm0_off_duration_hours: 12
   duration_days: 2

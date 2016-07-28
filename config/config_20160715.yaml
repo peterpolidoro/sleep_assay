@@ -18,13 +18,13 @@ entrainment:
     power: 100 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
     pwm0_on_duration_hours: 12
     pwm0_off_duration_hours: 12
-  duration_days: 3
+  duration_days: 0
 experiment:
 - white_light:
     power: 100 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
     pwm0_on_duration_hours: 12
     pwm0_off_duration_hours: 12
-  duration_days: 3
+  duration_days: 2
 - white_light:
     power: 100 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
     pwm0_on_duration_hours: 12
