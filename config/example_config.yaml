@@ -30,7 +30,7 @@ experiment:
     pwm0_on_duration_hours: 12
     pwm0_off_duration_hours: 12
   red_light:
-    power: 100 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
+    power: 255 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
     pwm0_frequency_hz: 10
     pwm0_duty_cycle_percent: 50
     pwm1_on_duration_hours: 12
@@ -43,7 +43,7 @@ experiment:
     pwm0_off_duration_hours: 12
   duration_days: 3
 - red_light:
-    power: 100 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
+    power: 255 # 0 <= power <= 255, 0 is totally dark, 255 is maximum brightness
     pwm0_frequency_hz: 10
     pwm0_duty_cycle_percent: 50
     pwm1_on_duration_hours: 12
