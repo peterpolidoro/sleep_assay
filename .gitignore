@@ -122,3 +122,7 @@ Makefile
 cmake_install.cmake
 install_manifest.txt
 CTestTestfile.cmake
+
+\#*
+*.lck
+OldVersions/
