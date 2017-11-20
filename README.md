@@ -22,7 +22,7 @@ Press ctrl-c in terminal window or close terminal window to stop.
 
 ###Setup Git
 
-<https://github.com/janelia-idf/git_setup>
+<https://github.com/janelia-experimental-technology/git_setup>
 
 ###Clone This Repository
 
